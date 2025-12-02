@@ -1,0 +1,140 @@
+{% load static %}
+{% load my_custom_filters %} 
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Redes Sociales - ClubAlmacen</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#005A9C",
+                        "secondary": "#FF9800",
+                        "background-light": "#F4F6F8",
+                        "background-dark": "#101c22",
+                        "text-light": "#333333",
+                        "text-dark": "#F4F6F8",
+                        "text-muted-light": "#666666",
+                        "text-muted-dark": "#a0aec0",
+                    },
+                    fontFamily: {
+                        "display": ["Work Sans", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "2xl": "1rem",
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Estilos específicos para los colores de marca de las redes sociales */
+        .bg-facebook { background-color: #1877F2; }
+        .bg-instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); } 
+        .bg-youtube { background-color: #FF0000; }
+        .bg-x { background-color: #111111; }
+        .bg-tiktok { background-color: #000000; }
+        
+        /* Ajuste de tipografía para las tarjetas */
+        .social-card p {
+            font-size: 1.25rem; 
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display">
+    <div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+
+            <header class="flex items-center justify-between whitespace-nowrap bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 px-10 py-3 shadow-sm sticky top-0 z-50">
+                <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-3">
+                        <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Logo de la Plataforma" class="h-24 w-auto"/>
+                    </div>
+                    <nav class="hidden md:flex gap-6 text-text-muted-light dark:text-text-muted-dark font-semibold text-sm">
+                        <a href="{% url 'plataforma_comerciante' %}" class="text-primary transition-colors">Plataforma</a>
+                        <a href="{% url 'directorio' %}" class="hover:text-primary transition-colors">Proveedores</a> 
+                        <a href="{% url 'beneficios' %}" class="hover:text-primary transition-colors">Beneficios</a>
+                        <a href="{% url 'redes_sociales' %}" class="hover:text-primary transition-colors">Redes Sociales</a>
+
+                    </nav>
+                </div>
+                
+                <div class="flex justify-end gap-4 items-center">
+                    <button class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-transparent text-text-muted-light dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <span class="material-symbols-outlined text-2xl">notifications</span>
+                    </button>
+                    <a href="{% url 'perfil' %}" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
+                            data-alt="Foto de {{ comerciante.nombre_apellido }}" 
+                            style='background-image: url("{{ comerciante.get_profile_picture_url }}");'>
+                        </div>
+                        
+                        <div class="flex flex-col text-left hidden sm:block">
+                            <p class="text-text-light dark:text-text-dark text-sm font-semibold leading-none">{{ comerciante.nombre_apellido|truncatewords:2 }}</p>
+                            <p class="text-text-muted-light dark:text-text-muted-dark text-xs leading-none mt-1">{{ rol_usuario }}</p>
+                        </div>
+                    </a>
+                    <a href="{% url 'perfil' %}" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        </a>
+                </div>
+            </header>
+
+            <main class="flex-1 w-full max-w-screen-xl mx-auto p-6 lg:p-8">
+                <h1 class="text-3xl font-black text-text-light dark:text-text-dark mb-8 text-center">Canales Oficiales y Comunidad</h1>
+                
+                <div class="flex flex-wrap justify-center gap-6 max-w-4xl mx-auto">
+
+                    <a href="https://www.facebook.com/ClubAlmacenChile/" target="_blank"
+                        class="social-card w-64 h-36 rounded-2xl bg-facebook text-white flex flex-col items-center justify-center shadow-2xl hover:shadow-3xl hover:scale-[1.03] transition transform duration-300">
+                        <span class="material-symbols-outlined text-4xl mb-2">thumb_up</span> 
+                        <p>Facebook</p>
+                        <span class="text-sm font-light opacity-80">Comunidad de Almaceneros</span>
+                    </a>
+
+                    <a href="https://www.instagram.com/clubalmacen/?hl=es-la" target="_blank"
+                        class="social-card w-64 h-36 rounded-2xl bg-instagram text-white flex flex-col items-center justify-center shadow-2xl hover:shadow-3xl hover:scale-[1.03] transition transform duration-300">
+                        <span class="material-symbols-outlined text-4xl mb-2">photo_camera</span>
+                        <p>Instagram</p>
+                        <span class="text-sm font-light opacity-80">Tips Visuales y Novedades</span>
+                    </a>
+
+                    <a href="https://www.youtube.com/@misoporteclubalmacen145" target="_blank"
+                        class="social-card w-64 h-36 rounded-2xl bg-youtube text-white flex flex-col items-center justify-center shadow-2xl hover:shadow-3xl hover:scale-[1.03] transition transform duration-300">
+                        <span class="material-symbols-outlined text-4xl mb-2">subscriptions</span>
+                        <p>YouTube</p>
+                        <span class="text-sm font-light opacity-80">Tutoriales y Entrevistas</span>
+                    </a>
+                    
+                    <a href="https://x.com/clubalmacen" target="_blank"
+                        class="social-card w-64 h-36 rounded-2xl bg-x text-white flex flex-col items-center justify-center shadow-2xl hover:shadow-3xl hover:scale-[1.03] transition transform duration-300">
+                        <span class="material-symbols-outlined text-4xl mb-2">public</span>
+                        <p>Twitter (X)</p>
+                        <span class="text-sm font-light opacity-80">Noticias del Sector</span>
+                    </a>
+
+                    <a href="{% url 'plataforma_comerciante' %}"
+                        class="social-card w-64 h-36 rounded-2xl bg-white text-primary border-4 border-secondary flex flex-col items-center justify-center shadow-xl hover:shadow-2xl hover:scale-[1.03] transition transform duration-300">
+                        <span class="material-symbols-outlined text-4xl mb-2">forum</span>
+                        <p class="text-primary">Comunidad (Foro)</p>
+                        <span class="text-sm font-light opacity-80 text-text-muted-light">Discute con otros comerciantes</span>
+                    </a>
+
+                </div>
+            </main>
+        </div>
+        
+        </div>
+</body>
+</html>

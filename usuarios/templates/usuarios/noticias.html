@@ -1,0 +1,149 @@
+{% load static %}
+{% load my_custom_filters %} 
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Noticias del Rubro</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#005A9C",
+                "secondary": "#FF9800",
+                "background-light": "#F4F6F8",
+                "background-dark": "#101c22",
+                "text-light": "#333333",
+                "text-dark": "#F4F6F8",
+                "text-muted-light": "#666666",
+                "text-muted-dark": "#a0aec0",
+              },
+              fontFamily: {
+                "display": ["Work Sans", "sans-serif"],
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+    <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+            
+            <header class="flex items-center justify-between whitespace-nowrap bg-white dark:bg-background-dark border-b border-solid border-gray-200 dark:border-gray-700 px-10 py-3 shadow-sm sticky top-0 z-50">
+                <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-3">
+                        <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Logo de la Plataforma" class="h-24 w-auto"/>
+                    </div>
+                    <nav class="hidden md:flex gap-6 text-text-muted-light dark:text-text-muted-dark font-semibold text-sm">
+                        <a href="{% url 'plataforma_comerciante' %}" class="hover:text-primary transition-colors">Plataforma</a>
+                        <a href="{% url 'directorio' %}" class="hover:text-primary transition-colors">Proveedores</a> 
+                        <a href="{% url 'beneficios' %}" class="hover:text-primary transition-colors">Beneficios</a>
+                        <a href="{% url 'perfil' %}" class="hover:text-primary transition-colors">Perfil</a>
+                    </nav>
+                </div>
+                <div class="flex justify-end gap-4 items-center">
+                    <a href="{% url 'plataforma_comerciante' %}" class="btn btn-outline-secondary">
+                        <i class="material-symbols-outlined me-1">arrow_back</i>
+                        <span class="hidden sm:inline">Volver a Plataforma</span>
+                    </a>
+                </div>
+            </header>
+            
+            <main class="flex-1 w-full max-w-screen-xl mx-auto p-6 lg:p-8">
+                
+                <h1 class="text-3xl font-bold text-text-light dark:text-text-dark mb-2">Noticias y Actualidad</h1>
+                <p class="text-text-muted-light dark:text-text-muted-dark text-lg mb-8">Información relevante de medios nacionales y especializados (Revista Comerciante, La Tercera, etc.).</p>
+
+                <form method="get" action="{% url 'noticias' %}" id="filter-news-form" class="flex flex-wrap gap-4 mb-6 items-center bg-white p-4 rounded-xl shadow-sm">
+                    
+                    <h3 class="text-base font-semibold text-text-light mr-2">Filtrar por:</h3>
+
+                    {# Filtro por Periodico/Fuente #}
+                    <select name="fuente" onchange="document.getElementById('filter-news-form').submit()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-text-muted-light focus:ring-primary focus:border-primary">
+                        <option value="TODOS" {% if source_seleccionada == 'TODOS' %}selected{% endif %}>
+                            Fuente (Todos)
+                        </option>
+                        {% for source in fuentes %}
+                            <option value="{{ source }}" {% if source == source_seleccionada %}selected{% endif %}>
+                                {{ source }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    {# Filtro por Temática/Temas #}
+                    <select name="tematica" onchange="document.getElementById('filter-news-form').submit()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-text-muted-light focus:ring-primary focus:border-primary">
+                        <option value="TODOS" {% if theme_seleccionada == 'TODOS' %}selected{% endif %}>
+                            Temática (Todas)
+                        </option>
+                        {% for theme in tematicas %}
+                            <option value="{{ theme }}" {% if theme == theme_seleccionada %}selected{% endif %}>
+                                {{ theme }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <button type="submit" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors">
+                        Aplicar Filtros
+                    </button>
+                    
+                    {% if source_seleccionada != 'TODOS' or theme_seleccionada != 'TODOS' %}
+                    <a href="{% url 'noticias' %}" class="text-sm text-red-500 hover:text-red-700 underline ml-auto">Limpiar Filtros</a>
+                    {% endif %}
+                </form>
+
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    
+                    {% for news in noticias %}
+                    <div class="bg-white dark:bg-white rounded-xl shadow-md overflow-hidden flex flex-col group hover:shadow-xl transition-shadow duration-300">
+                        
+                        <div class="relative p-4 h-40 flex items-center justify-center overflow-hidden border-b border-gray-100">
+                            <span class="material-symbols-outlined text-6xl text-primary opacity-50 absolute inset-0 m-auto">article</span>
+                            <h4 class="text-xs font-semibold uppercase text-text-light z-10 p-2 bg-white/70 backdrop-blur-sm rounded-lg">{{ news.theme }}</h4>
+                        </div>
+                        
+                        <div class="p-4 flex-1 flex flex-col">
+                            <h3 class="text-lg font-bold text-text-light dark:text-text-dark mb-2">{{ news.title }}</h3>
+                            <p class="text-text-muted-light text-sm mb-4 flex-grow">{{ news.snippet|truncatechars:150 }}</p>
+                            
+                            <div class="flex items-center justify-between mt-auto border-t pt-3">
+                                <span class="text-xs font-semibold text-primary/80">Fuente: {{ news.source }}</span>
+                                <a href="{{ news.url }}" target="_blank"
+                                   class="px-3 py-1 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors">
+                                    Leer Noticia
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                        <div class="col-span-full bg-white dark:bg-white p-10 rounded-xl shadow-sm text-center">
+                            <span class="material-symbols-outlined text-6xl text-text-muted-light mb-4">info</span>
+                            <p class="text-lg font-semibold text-text-muted-light">No se encontraron noticias que coincidan con los filtros seleccionados.</p>
+                            <p class="text-sm text-text-muted-light mt-2">Intenta con otra combinación de fuente y temática.</p>
+                        </div>
+                    {% endfor %}
+
+                </div>
+                
+            </main>
+        </div>
+        
+        <footer class="text-center text-xs text-text-muted-light border-t border-gray-200 py-4 mt-10">
+            <p>Soporte | Preguntas Frecuentes | Términos de Servicio</p>
+            <p class="mt-1">© 2025 Plataforma de Comerciantes. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,158 @@
+{% load static %}
+{% load my_custom_filters %} 
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Directorio de Proveedores</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#005A9C",
+                "secondary": "#FF9800",
+                "background-light": "#F4F6F8",
+                "background-dark": "#101c22",
+                "text-light": "#333333",
+                "text-dark": "#F4F6F8",
+                "text-muted-light": "#666666",
+                "text-muted-dark": "#a0aec0",
+              },
+              fontFamily: {
+                "display": ["Work Sans", "sans-serif"],
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+    <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+            
+            <header class="flex items-center justify-between whitespace-nowrap bg-white dark:bg-background-dark border-b border-solid border-gray-200 dark:border-gray-700 px-10 py-3 shadow-sm sticky top-0 z-50">
+                <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-3">
+                        <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Logo de la Plataforma" class="h-24 w-auto"/>
+                    </div>
+                    <nav class="hidden md:flex gap-6 text-text-muted-light dark:text-text-muted-dark font-semibold text-sm">
+                        <a href="{% url 'plataforma_comerciante' %}" class="hover:text-primary transition-colors">Plataforma</a>
+                        <a href="{% url 'directorio' %}" class="text-primary transition-colors">Directorio</a>
+                        <a href="{% url 'beneficios' %}" class="hover:text-primary transition-colors">Beneficios</a>
+                        <a href="{% url 'perfil' %}" class="hover:text-primary transition-colors">Perfil</a>
+                    </nav>
+                </div>
+                <div class="flex justify-end gap-4 items-center">
+                    <button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-transparent text-text-muted-light dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <span class="material-symbols-outlined text-2xl">notifications</span>
+                    </button>
+                    <a href="{% url 'perfil' %}" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
+                            data-alt="Foto de Perfil" 
+                            style='background-image: url("{{ comerciante.get_profile_picture_url }}");'>
+                        </div>
+                    </a>
+                </div>
+            </header>
+            
+            <main class="flex-1 w-full max-w-screen-xl mx-auto p-6 lg:p-8">
+                
+                <h1 class="text-3xl font-bold text-text-light dark:text-text-dark mb-2">Directorio de Proveedores</h1>
+                <p class="text-text-muted-light dark:text-text-muted-dark text-lg mb-8">Encuentra los mejores proveedores para tu negocio de barrio.</p>
+
+                <form method="get" action="{% url 'directorio' %}" id="filter-form" class="flex flex-wrap gap-4 mb-6 items-center">
+                    {% csrf_token %}
+                    <select name="rubro" onchange="document.getElementById('filter-form').submit()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-text-muted-light focus:ring-primary focus:border-primary">
+                        <option value="TODOS" {% if not current_rubro or current_rubro == 'TODOS' %}selected{% endif %}>
+                            Rubro
+                        </option>
+                        {% for key, value in RUBROS_CHOICES %}
+                            <option value="{{ value }}" {% if value == current_rubro %}selected{% endif %}>
+                                {{ value }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="zona" onchange="document.getElementById('filter-form').submit()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-text-muted-light focus:ring-primary focus:border-primary">
+                        <option value="TODOS" {% if not current_zona or current_zona == 'TODOS' %}selected{% endif %}>
+                            Zona Geográfica
+                        </option>
+                        {% for zona in ZONAS %}
+                            <option value="{{ zona }}" {% if zona == current_zona %}selected{% endif %}>
+                                {{ zona }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <select name="ordenar_por" onchange="document.getElementById('filter-form').submit()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-text-muted-light focus:ring-primary focus:border-primary">
+                        <option value="proveedor__nombre" {% if current_sort == 'proveedor__nombre' %}selected{% endif %}>Ordenar por: Nombre (A-Z)</option>
+                        <option value="-proveedor__nombre" {% if current_sort == '-proveedor__nombre' %}selected{% endif %}>Ordenar por: Nombre (Z-A)</option>
+                        <option value="-fecha_creacion" {% if current_sort == '-fecha_creacion' %}selected{% endif %}>Ordenar por: Más Recientes</option>
+                    </select>
+                </form>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    
+                    {% for propuesta in propuestas %}
+                    {% with proveedor=propuesta.proveedor %}
+                    <div class="bg-white dark:bg-white rounded-xl shadow-md overflow-hidden flex flex-col group hover:shadow-xl transition-shadow duration-300">
+                        
+                        <div class="relative p-6 h-36 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                            <div class="w-full h-full absolute inset-0 bg-cover bg-center" style="background-image: url('https://picsum.photos/400/150?random={{ forloop.counter }}'); opacity: 0.2;"></div>
+                            
+                            <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Logo de {{ proveedor.nombre }}" class="h-16 w-auto relative z-10"/>
+                            
+                        </div>
+                        
+                        <div class="p-4 flex-1 flex flex-col">
+                            <h3 class="text-xl font-bold text-text-light dark:text-text-dark mb-1">{{ proveedor.nombre }}</h3>
+                            <p class="text-text-muted-light text-sm mb-3 flex-grow">{{ propuesta.titulo }}</p>
+                            
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                {% for rubro in propuesta.rubros_ofertados|split:"," %}
+                                <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">{{ rubro|trim }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="flex items-center text-text-muted-light text-sm mb-4">
+                                <span class="material-symbols-outlined text-base mr-1">location_on</span>
+                                <span>{{ propuesta.zona_geografica }}</span>
+                            </div>
+                            
+                            <a href="{% url 'proveedor_perfil' pk=proveedor.pk %}"
+                               class="w-full px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg text-center hover:bg-primary/90 transition-colors">
+                                Contactar
+                            </a>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% empty %}
+                        <div class="p-4 text-center text-text-muted-light dark:text-text-muted-dark col-span-full">
+                            No se encontraron proveedores que coincidan con los filtros.
+                        </div>
+                    {% endfor %}
+
+                </div>
+                
+            </main>
+        </div>
+        
+        <footer class="text-center text-xs text-text-muted-light border-t border-gray-200 py-4 mt-10">
+            <p>Soporte | Preguntas Frecuentes | Términos de Servicio</p>
+            <p class="mt-1">© 2025 Plataforma de Comerciantes. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+</body>
+</html>

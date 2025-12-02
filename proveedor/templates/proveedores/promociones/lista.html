@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Promociones - Proveedor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .promociones-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .btn-new {
+        background-color: #0095ff;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-new:hover {
+        background-color: #0077cc;
+        transform: translateY(-2px);
+    }
+
+    /* FILTROS */
+    .filtros-container {
+        background: var(--bg-primary);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        border: 1px solid var(--border-color);
+    }
+
+    .filtros-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .filtro-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filtro-group label {
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+
+    .filtro-group select,
+    .filtro-group input {
+        padding: 0.6rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+
+    .filtro-group select:focus,
+    .filtro-group input:focus {
+        outline: none;
+        border-color: #0095ff;
+    }
+
+    .filtros-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .btn-filtrar {
+        background: #0095ff;
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-filtrar:hover {
+        background: #0077cc;
+        transform: translateY(-2px);
+    }
+
+    .btn-limpiar {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        padding: 0.6rem 1.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-limpiar:hover {
+        background: var(--border-color);
+    }
+
+    .filtros-activos {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filtro-tag {
+        background: var(--bg-secondary);
+        padding: 0.4rem 0.8rem;
+        border-radius: 16px;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .filtro-tag .remove {
+        cursor: pointer;
+        color: #dc3545;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    /* GRID DE PROMOCIONES */
+    .promociones-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .promocion-card {
+        background: var(--bg-primary);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        transition: transform 0.2s;
+        border: 1px solid var(--border-color);
+    }
+
+    .promocion-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .promocion-imagen {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .promocion-imagen img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .promocion-imagen .placeholder {
+        font-size: 4rem;
+        color: white;
+    }
+
+    .promocion-content {
+        padding: 1.25rem;
+    }
+
+    .promocion-titulo {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .promocion-descripcion {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .promocion-fechas {
+        background: var(--bg-secondary);
+        padding: 0.8rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.85rem;
+    }
+
+    .promocion-fechas p {
+        margin: 0.2rem 0;
+        color: var(--text-secondary);
+    }
+
+    .promocion-fechas strong {
+        color: #f5576c;
+    }
+
+    .promocion-estado {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .estado-vigente {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .estado-programada {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .estado-vencida {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .estado-inactiva {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+
+    .promocion-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-action {
+        flex: 1;
+        padding: 0.6rem;
+        border-radius: 6px;
+        text-decoration: none;
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-edit {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    .btn-edit:hover {
+        background: #ffeaa7;
+        transform: translateY(-2px);
+    }
+
+    .btn-delete {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .btn-delete:hover {
+        background: #f5c6cb;
+        transform: translateY(-2px);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--bg-primary);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: var(--text-secondary);
+    }
+
+    @media (max-width: 768px) {
+        .promociones-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-new {
+            justify-content: center;
+        }
+
+        .filtros-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="promociones-container">
+        <div class="page-header">
+            <h1 class="page-title">🎁 Mis Promociones</h1>
+            <a href="{% url 'proveedores:crear_promocion' %}" class="btn-new">
+                ✨ Nueva Promoción
+            </a>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="filtros-container">
+            <form method="get">
+                <div class="filtros-row">
+                    <div class="filtro-group">
+                        <label for="estado">Estado</label>
+                        <select name="estado" id="estado">
+                            <option value="">Todas</option>
+                            <option value="activas" {% if estado_actual == 'activas' %}selected{% endif %}>Activas</option>
+                            <option value="inactivas" {% if estado_actual == 'inactivas' %}selected{% endif %}>Inactivas</option>
+                        </select>
+                    </div>
+
+                    <div class="filtro-group">
+                        <label for="vigencia">Vigencia</label>
+                        <select name="vigencia" id="vigencia">
+                            <option value="">Todas</option>
+                            <option value="vigentes" {% if vigencia_actual == 'vigentes' %}selected{% endif %}>Vigentes</option>
+                            <option value="programadas" {% if vigencia_actual == 'programadas' %}selected{% endif %}>Programadas</option>
+                            <option value="vencidas" {% if vigencia_actual == 'vencidas' %}selected{% endif %}>Vencidas</option>
+                        </select>
+                    </div>
+
+                    <div class="filtro-group">
+                        <label for="buscar">Buscar</label>
+                        <input type="text" name="buscar" id="buscar" 
+                               placeholder="Título de promoción..." 
+                               value="{{ buscar_actual }}">
+                    </div>
+
+                    <div class="filtro-group">
+                        <label for="fecha_desde">Desde</label>
+                        <input type="date" name="fecha_desde" id="fecha_desde" 
+                               value="{{ fecha_desde_actual }}">
+                    </div>
+
+                    <div class="filtro-group">
+                        <label for="fecha_hasta">Hasta</label>
+                        <input type="date" name="fecha_hasta" id="fecha_hasta" 
+                               value="{{ fecha_hasta_actual }}">
+                    </div>
+                </div>
+
+                <div class="filtros-actions">
+                    <a href="{% url 'proveedores:lista_promociones' %}" class="btn-limpiar">🔄 Limpiar</a>
+                    <button type="submit" class="btn-filtrar">🔍 Filtrar</button>
+                </div>
+
+                <!-- Filtros activos -->
+                {% if estado_actual or vigencia_actual or buscar_actual or fecha_desde_actual or fecha_hasta_actual %}
+                <div class="filtros-activos">
+                    <strong style="color: var(--text-secondary);">Filtros activos:</strong>
+                    {% if estado_actual %}
+                    <span class="filtro-tag">
+                        Estado: {{ estado_actual }}
+                        <a href="?vigencia={{ vigencia_actual }}&buscar={{ buscar_actual }}&fecha_desde={{ fecha_desde_actual }}&fecha_hasta={{ fecha_hasta_actual }}" class="remove">✕</a>
+                    </span>
+                    {% endif %}
+                    {% if vigencia_actual %}
+                    <span class="filtro-tag">
+                        Vigencia: {{ vigencia_actual }}
+                        <a href="?estado={{ estado_actual }}&buscar={{ buscar_actual }}&fecha_desde={{ fecha_desde_actual }}&fecha_hasta={{ fecha_hasta_actual }}" class="remove">✕</a>
+                    </span>
+                    {% endif %}
+                    {% if buscar_actual %}
+                    <span class="filtro-tag">
+                        Búsqueda: "{{ buscar_actual }}"
+                        <a href="?estado={{ estado_actual }}&vigencia={{ vigencia_actual }}&fecha_desde={{ fecha_desde_actual }}&fecha_hasta={{ fecha_hasta_actual }}" class="remove">✕</a>
+                    </span>
+                    {% endif %}
+                    {% if fecha_desde_actual or fecha_hasta_actual %}
+                    <span class="filtro-tag">
+                        Rango de fechas
+                        <a href="?estado={{ estado_actual }}&vigencia={{ vigencia_actual }}&buscar={{ buscar_actual }}" class="remove">✕</a>
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- GRID DE PROMOCIONES -->
+        {% if promociones %}
+        <div class="promociones-grid">
+            {% for promocion in promociones %}
+            <div class="promocion-card">
+                <div class="promocion-imagen">
+                    {% if promocion.imagen %}
+                        <img src="{{ promocion.imagen.url }}" alt="{{ promocion.titulo }}">
+                    {% else %}
+                        <span class="placeholder">🎁</span>
+                    {% endif %}
+                </div>
+
+                <div class="promocion-content">
+                    <h3 class="promocion-titulo">{{ promocion.titulo }}</h3>
+                    <p class="promocion-descripcion">{{ promocion.descripcion|truncatewords:15 }}</p>
+                    
+                    <div class="promocion-fechas">
+                        <p><strong>Inicio:</strong> {{ promocion.fecha_inicio|date:"d/m/Y" }}</p>
+                        <p><strong>Fin:</strong> {{ promocion.fecha_fin|date:"d/m/Y" }}</p>
+                    </div>
+
+                    {% load tz %}
+                    {% now "Y-m-d" as hoy %}
+                    {% if not promocion.activo %}
+                        <span class="promocion-estado estado-inactiva">✗ Inactiva</span>
+                    {% elif promocion.fecha_inicio|date:"Y-m-d" <= hoy and promocion.fecha_fin|date:"Y-m-d" >= hoy %}
+                        <span class="promocion-estado estado-vigente">✓ Vigente</span>
+                    {% elif promocion.fecha_inicio|date:"Y-m-d" > hoy %}
+                        <span class="promocion-estado estado-programada">⏰ Programada</span>
+                    {% else %}
+                        <span class="promocion-estado estado-vencida">⏱️ Vencida</span>
+                    {% endif %}
+
+                    <div class="promocion-actions">
+                        <a href="{% url 'proveedores:editar_promocion' promocion.id %}" class="btn-action btn-edit">
+                            ✏️ Editar
+                        </a>
+                        <a href="{% url 'proveedores:eliminar_promocion' promocion.id %}" class="btn-action btn-delete">
+                            🗑️ Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            {% if estado_actual or vigencia_actual or buscar_actual or fecha_desde_actual or fecha_hasta_actual %}
+            <h3>🔍 No se encontraron promociones con estos filtros</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Intenta ajustar los filtros o crear una nueva promoción</p>
+            <a href="{% url 'proveedores:lista_promociones' %}" class="btn-limpiar" style="margin-right: 1rem;">
+                🔄 Limpiar Filtros
+            </a>
+            {% else %}
+            <h3>🎁 No tienes promociones registradas</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Crea promociones para atraer más clientes</p>
+            {% endif %}
+            <a href="{% url 'proveedores:crear_promocion' %}" class="btn-new">
+                ✨ Crear Promoción
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

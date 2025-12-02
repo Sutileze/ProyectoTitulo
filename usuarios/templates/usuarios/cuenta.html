@@ -1,0 +1,255 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login / Registro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1193d4",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101c22",
+                    },
+                    fontFamily: {
+                        "display": ["Work Sans", "Noto Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+</script>
+
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex min-h-screen w-full flex-col items-center justify-center bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden p-4 sm:p-6 lg:p-8">
+<div class="flex w-full max-w-4xl rounded-xl shadow-lg bg-white dark:bg-background-dark overflow-hidden">
+<div class="hidden md:flex w-1/2 bg-primary/20 items-center justify-center p-8">
+<img alt="Ilustración de comerciantes locales sonriendo en sus tiendas" class="object-cover w-full h-full rounded-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClLEtZ8dSK40cMkLZtiZTZ8wuLjYxD3RaoRhiGuYKrXVVlVkIA7YuSTzhyMzQuAiR3r1Gt2C9clLlq_jgCO07QR2_6f343IkGQy9oDSTZStlTPGtJm8zdcYAx9fo-nWCQ1VFT580ohEo-9jx8oGF0bdM5hDClRQrgHVeoxbmHugo9O4fhO2qEcjBEnkNmmvTZ_lE3bQcaanuAidpOqRq-cwIVSwQp3Y4RRm-6ol82Sq_c0_ttBBdrtBLq7a1xj8GVV7cmDLNAXhQ"/>
+</div>
+<div class="w-full md:w-1/2 p-6 sm:p-8 lg:p-12 flex flex-col">
+<div class="mb-6 text-center">
+<span class="material-symbols-outlined text-primary text-5xl">storefront</span>
+<h1 class="text-3xl font-black text-[#0d171b] dark:text-white mt-2">Comerciantes de Barrio</h1>
+</div>
+
+{% if comerciante %}
+    <div class="flex items-center justify-center mb-4">
+        <a href="{% url 'perfil' %}" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
+                data-alt="Foto de {{ comerciante.nombre_apellido }}" 
+                style='background-image: url("{{ comerciante.get_profile_picture_url }}");'>
+            </div>
+            <div class="flex flex-col text-left pr-2">
+                <p class="text-text-light dark:text-text-dark text-sm font-semibold leading-none">{{ comerciante.nombre_apellido|truncatewords:2 }}</p>
+                <p class="text-text-muted-light dark:text-text-muted-dark text-xs leading-none mt-1">{{ rol_usuario }}</p>
+            </div>
+        </a>
+    </div>
+{% endif %}
+<div class="pb-3">
+<div class="flex border-b border-[#cfdfe7] dark:border-gray-700 gap-8">
+<a id="login-tab" data-target="login-form-wrapper" class="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#4c809a] dark:text-gray-400 pb-[13px] pt-4 flex-1 cursor-pointer" href="{% url 'login' %}">
+<p class="text-sm font-bold leading-normal tracking-[0.015em]">Iniciar Sesión</p>
+</a>
+<a id="register-tab" data-target="register-form-wrapper" class="flex flex-col items-center justify-center border-b-[3px] border-b-primary text-[#0d171b] dark:text-white pb-[13px] pt-4 flex-1 cursor-pointer" href="{% url 'registro' %}">
+<p class="text-sm font-bold leading-normal tracking-[0.015em]">Registrarse</p>
+</a>
+</div>
+</div>
+{% if messages %}
+    <div class="mb-4">
+    {% for message in messages %}
+        <div class="p-3 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-300{% elif message.tags == 'success' %}bg-green-100 text-green-700 border border-green-300{% else %}bg-blue-100 text-blue-700 border border-blue-300{% endif %}">
+            {{ message }}
+        </div>
+    {% endfor %}
+    </div>
+{% endif %}
+
+<div class="flex-grow">
+    
+  <div id="login-form-wrapper" class="block">
+    <form method="POST" action="{% url 'login' %}" class="flex flex-col h-full">
+        {% csrf_token %}
+        <div class="flex flex-col items-center gap-4 py-6">
+            <button type="button" class="flex w-full max-w-sm cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-lg h-12 px-5 bg-[#e7eff3] dark:bg-gray-700 text-[#0d171b] dark:text-white text-base font-bold leading-normal tracking-[0.015em] transition-colors hover:bg-primary/20 dark:hover:bg-gray-600">
+                <img alt="Logo de Google" class="h-5 w-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfhDZgjaWf0Vg7z821uGJ5ZJuqug_LZHQ7UHCC_yc7nAdTV_8k7aXGola7lCzhaHKiQqWH8lv3gKV97EP2_RCEkA4a1xacWWQ2n9wTTg1uzj7w9DtK9DVRm-mhW9oNmL6fR05BL7YbaSDQV-9_KMMTg3iV6i27hDillP5EO9UewqubAwVSo8O3l_xZM4bTUkW4yZM_L9dp39t2Q29GDbfAKwNIyzXVR0UfWfv6X6kms_xSEapuyUaGcF9yhM22jlJRI7diEf24Wg"/>
+                <span class="truncate">Continuar con Gmail</span>
+            </button>
+            <button type="button" class="flex w-full max-w-sm cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-lg h-12 px-5 bg-[#e7eff3] dark:bg-gray-700 text-[#0d171b] dark:text-white text-base font-bold leading-normal tracking-[0.015em] transition-colors hover:bg-primary/20 dark:hover:bg-gray-600">
+                <img alt="Logo de Facebook" class="h-5 w-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAujimxZHMCYqHRH9AtrmmLSCsel7rQZyN0wKDyp1Q1qKZq7snoMLOFmDYyemDFOqNvPYJnl5Qr2eo52gpnxW6rDNSVUGCETgQq2VbbVDFFHqtQGw_Kx2jHBr6Z1TrCj4H-_bm0lAFREjJLIjlOBUhSRsWnIX2tpRZ5gl6lHcPBnVLkVMqtTuHy67hFTTz8yR261fIBnwzo4-Aw_sB4HMPCs1z_RoMyDbvaOOj_FXBLHJMJ2WWVpYP4kf9v_hG0XXZZk6mY9G7vQQ"/>
+                <span class="truncate">Continuar con Facebook</span>
+            </button>
+        </div>
+        <p class="text-[#4c809a] dark:text-gray-400 text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">O continúa con tu correo</p>
+        <div class="flex w-full max-w-sm flex-col items-stretch px-4 py-3 mx-auto space-y-4">
+            <label class="flex flex-col w-full">
+                <p class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2">Correo electrónico</p>
+                <input name="email" type="email" required class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d171b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary border border-[#cfdfe7] dark:border-gray-600 bg-background-light dark:bg-gray-800 focus:border-primary h-14 placeholder:text-[#4c809a] dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal" placeholder="tucorreo@ejemplo.com"/>
+            </label>
+            <label class="flex flex-col w-full">
+                <p class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2">Contraseña</p>
+                <input name="password" type="password" required class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d171b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary border border-[#cfdfe7] dark:border-gray-600 bg-background-light dark:bg-gray-800 focus:border-primary h-14 placeholder:text-[#4c809a] dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal" placeholder="Ingresa tu contraseña"/>
+            </label>
+            <a class="text-sm text-primary hover:underline text-right pt-2" href="#">¿Olvidaste tu contraseña?</a>
+            <button type="submit" class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] w-full mt-6 transition-transform hover:scale-105">
+                <span class="truncate">Iniciar Sesión</span>
+            </button>
+        </div>
+    </form>
+</div>
+    
+
+    <div id="register-form-wrapper">
+        <form class="flex flex-col h-full space-y-4 pt-2" method="POST" action="{% url 'registro' %}">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="p-3 rounded-lg bg-red-100 text-red-700 text-sm border border-red-300">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="flex flex-col">
+                <label class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2" for="fullname">Nombre y Apellido</label>
+                <input name="nombre_apellido" value="{{ form.nombre_apellido.value|default:'' }}" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d171b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary border {% if form.nombre_apellido.errors %}border-red-500{% else %}border-[#cfdfe7] dark:border-gray-600{% endif %} bg-background-light dark:bg-gray-800 focus:border-primary h-12 placeholder:text-[#4c809a] dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal" id="fullname" placeholder="Ej: Juan Pérez" type="text"/>
+                {% for error in form.nombre_apellido.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2" for="email">Correo electrónico</label>
+                <input name="email" value="{{ form.email.value|default:'' }}" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d171b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary border {% if form.email.errors %}border-red-500{% else %}border-[#cfdfe7] dark:border-gray-600{% endif %} bg-background-light dark:bg-gray-800 focus:border-primary h-12 placeholder:text-[#4c809a] dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal" id="email" placeholder="tucorreo@ejemplo.com" type="email"/>
+                {% for error in form.email.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2" for="whatsapp">Número de WhatsApp</label>
+                <input name="whatsapp" value="{{ form.whatsapp.value|default:'' }}" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d171b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary border {% if form.whatsapp.errors %}border-red-500{% else %}border-[#cfdfe7] dark:border-gray-600{% endif %} bg-background-light dark:bg-gray-800 focus:border-primary h-12 placeholder:text-[#4c809a] dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal" id="whatsapp" placeholder="+56 9 1234 5678" type="tel"/>
+                {% for error in form.whatsapp.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2" for="password">Contraseña</label>
+                <input name="password" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d171b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary border {% if form.password.errors %}border-red-500{% else %}border-[#cfdfe7] dark:border-gray-600{% endif %} bg-background-light dark:bg-gray-800 focus:border-primary h-12 placeholder:text-[#4c809a] dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal" id="password" placeholder="Mínimo 8 caracteres" type="password"/>
+                {% for error in form.password.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2" for="confirm-password">Confirmar Contraseña</label>
+                <input name="confirm_password" class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d171b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary border {% if form.confirm_password.errors %}border-red-500{% else %}border-[#cfdfe7] dark:border-gray-600{% endif %} bg-background-light dark:bg-gray-800 focus:border-primary h-12 placeholder:text-[#4c809a] dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal" id="confirm-password" placeholder="Repite la contraseña" type="password"/>
+                {% for error in form.confirm_password.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2" for="id_relacion_negocio">Relación con el negocio</label>
+                {{ form.relacion_negocio }}
+                {% for error in form.relacion_negocio.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2" for="id_tipo_negocio">Tipo de negocio</label>
+                {{ form.tipo_negocio }}
+                {% for error in form.tipo_negocio.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-[#0d171b] dark:text-white text-base font-medium leading-normal pb-2" for="id_comuna_select">Comuna</label>
+                {{ form.comuna_select }}
+                {% for error in form.comuna_select.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="flex-grow"></div>
+            <button type="submit" class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] w-full mt-auto transition-transform hover:scale-105">
+                <span class="truncate">Crear Cuenta</span>
+            </button>
+        </form>
+    </div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginTab = document.getElementById('login-tab');
+        const registerTab = document.getElementById('register-tab');
+        const loginFormWrapper = document.getElementById('login-form-wrapper');
+        const registerFormWrapper = document.getElementById('register-form-wrapper');
+
+        // Función para cambiar la pestaña activa y el formulario visible
+        function switchTab(activeTab, inactiveTab, activeForm, inactiveForm) {
+            // Previene que el navegador siga el href="{% url 'login' %}" o "{% url 'registro' %}"
+            event.preventDefault(); 
+
+            // 1. Actualizar estilos de las pestañas
+            activeTab.classList.remove('border-b-transparent', 'text-[#4c809a]', 'dark:text-gray-400');
+            activeTab.classList.add('border-b-primary', 'text-[#0d171b]', 'dark:text-white');
+
+            inactiveTab.classList.remove('border-b-primary', 'text-[#0d171b]', 'dark:text-white');
+            inactiveTab.classList.add('border-b-transparent', 'text-[#4c809a]', 'dark:text-gray-400');
+
+            // 2. Mostrar el formulario activo y ocultar el inactivo
+            activeForm.classList.remove('hidden');
+            inactiveForm.classList.add('hidden');
+        }
+
+        // Manejador de clic para la pestaña Iniciar Sesión
+        loginTab.addEventListener('click', function(event) {
+            switchTab(loginTab, registerTab, loginFormWrapper, registerFormWrapper);
+        });
+
+        // Manejador de clic para la pestaña Registrarse
+        registerTab.addEventListener('click', function(event) {
+            switchTab(registerTab, loginTab, registerFormWrapper, loginFormWrapper);
+        });
+
+        // Lógica inicial para determinar qué formulario mostrar al cargar la página.
+        // Se basa en la URL actual, si incluye 'login' o 'registro', o en el estilo activo.
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('login') && loginTab.classList.contains('border-b-transparent')) {
+            // Si la URL es de login, pero el registro está activo por defecto en el HTML, cambiamos a login
+            switchTab(loginTab, registerTab, loginFormWrapper, registerFormWrapper);
+        } else if (currentPath.includes('registro') && registerTab.classList.contains('border-b-transparent')) {
+            // Caso de que el HTML esté invertido por error y queremos forzar registro
+            switchTab(registerTab, loginTab, registerFormWrapper, loginFormWrapper);
+        } else if (!currentPath.includes('login') && !currentPath.includes('registro')) {
+            // Si no estamos seguros, mantenemos el estado por defecto del HTML, que actualmente es Registro.
+            // Para asegurar la consistencia, ocultamos el login.
+            loginFormWrapper.classList.add('hidden');
+        }
+    });
+</script>
+<script src="{% static 'js/main.js' %}"></script>
+</body></html>

@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Perfil - Proveedor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .form-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .form-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .form-header p {
+        color: #666;
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .form-section h2 {
+        font-size: 1.2rem;
+        color: #1a1a1a;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0095ff;
+        box-shadow: 0 0 0 3px rgba(0,149,255,0.1);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 0.3rem;
+        display: block;
+    }
+
+    .errorlist {
+        list-style: none;
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin: 0.3rem 0 0 0;
+        padding: 0;
+    }
+
+    .errorlist li {
+        margin-bottom: 0.2rem;
+    }
+
+    /* Checkboxes para categorías */
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.8rem;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+    .form-check:hover {
+        background: #f5f5f5;
+    }
+
+    .form-check-input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        cursor: pointer;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .current-image {
+        max-width: 200px;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 2px solid #e0e0e0;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    .btn {
+        padding: 0.75rem 2rem;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel {
+        background-color: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-cancel:hover {
+        background-color: #e8e8e8;
+    }
+
+    .btn-primary {
+        background-color: #0095ff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0077cc;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-container">
+        <div class="form-header">
+            <h1>✏️ Editar Perfil de Proveedor</h1>
+            <p>Actualiza la información de tu empresa</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- INFORMACIÓN BÁSICA -->
+            <div class="form-section">
+                <h2>📋 Información Básica</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.nombre_empresa.label_tag }}
+                        {{ form.nombre_empresa }}
+                        {% if form.nombre_empresa.help_text %}
+                            <small class="help-text">{{ form.nombre_empresa.help_text }}</small>
+                        {% endif %}
+                        {{ form.nombre_empresa.errors }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form.descripcion.label_tag }}
+                    {{ form.descripcion }}
+                    {% if form.descripcion.help_text %}
+                        <small class="help-text">{{ form.descripcion.help_text }}</small>
+                    {% endif %}
+                    {{ form.descripcion.errors }}
+                </div>
+
+                <div class="form-group">
+                    {{ form.foto.label_tag }}
+                    {% if proveedor.foto %}
+                        <img src="{{ proveedor.foto.url }}" alt="Logo actual" class="current-image">
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Logo actual - Puedes subir uno nuevo</p>
+                    {% endif %}
+                    {{ form.foto }}
+                    {% if form.foto.help_text %}
+                        <small class="help-text">{{ form.foto.help_text }}</small>
+                    {% endif %}
+                    {{ form.foto.errors }}
+                </div>
+            </div>
+
+            <!-- CATEGORÍAS -->
+            <div class="form-section">
+                <h2>🏷️ Rubros que Ofreces</h2>
+                
+                <div class="form-group">
+                    <div class="checkbox-grid">
+                        {% for choice in form.categorias %}
+                            <div class="form-check">
+                                {{ choice.tag }}
+                                <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                    {{ choice.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.categorias.help_text %}
+                        <small class="help-text">{{ form.categorias.help_text }}</small>
+                    {% endif %}
+                    {{ form.categorias.errors }}
+                </div>
+            </div>
+
+            <!-- UBICACIÓN -->
+            <div class="form-section">
+                <h2>📍 Ubicación</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.pais.label_tag }}
+                        {{ form.pais }}
+                        {{ form.pais.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.region.label_tag }}
+                        {{ form.region }}
+                        {{ form.region.errors }}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.comuna.label_tag }}
+                        {{ form.comuna }}
+                        {{ form.comuna.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.cobertura.label_tag }}
+                        {{ form.cobertura }}
+                        {% if form.cobertura.help_text %}
+                            <small class="help-text">{{ form.cobertura.help_text }}</small>
+                        {% endif %}
+                        {{ form.cobertura.errors }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form.direccion.label_tag }}
+                    {{ form.direccion }}
+                    {{ form.direccion.errors }}
+                </div>
+            </div>
+
+            <!-- CONTACTO -->
+            <div class="form-section">
+                <h2>📞 Información de Contacto</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.telefono.label_tag }}
+                        {{ form.telefono }}
+                        {{ form.telefono.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.whatsapp.label_tag }}
+                        {{ form.whatsapp }}
+                        {% if form.whatsapp.help_text %}
+                            <small class="help-text">{{ form.whatsapp.help_text }}</small>
+                        {% endif %}
+                        {{ form.whatsapp.errors }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    {{ form.sitio_web.label_tag }}
+                    {{ form.sitio_web }}
+                    {{ form.sitio_web.errors }}
+                </div>
+            </div>
+
+            <!-- REDES SOCIALES -->
+            <div class="form-section">
+                <h2>🌐 Redes Sociales</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.facebook.label_tag }}
+                        {{ form.facebook }}
+                        {{ form.facebook.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.instagram.label_tag }}
+                        {{ form.instagram }}
+                        {% if form.instagram.help_text %}
+                            <small class="help-text">{{ form.instagram.help_text }}</small>
+                        {% endif %}
+                        {{ form.instagram.errors }}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form.twitter.label_tag }}
+                        {{ form.twitter }}
+                        {% if form.twitter.help_text %}
+                            <small class="help-text">{{ form.twitter.help_text }}</small>
+                        {% endif %}
+                        {{ form.twitter.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.linkedin.label_tag }}
+                        {{ form.linkedin }}
+                        {{ form.linkedin.errors }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTONES -->
+            <div class="form-actions">
+                <a href="{% url 'proveedores:perfil_proveedor' %}" class="btn btn-cancel">Cancelar</a>
+                <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Script para cargar comunas según región seleccionada
+document.getElementById('id_region').addEventListener('change', function() {
+    const regionId = this.value;
+    const comunaSelect = document.getElementById('id_comuna');
+    
+    if (regionId) {
+        fetch(`/proveedores/ajax/comunas/?region_id=${regionId}`)
+            .then(response => response.json())
+            .then(data => {
+                comunaSelect.innerHTML = '<option value="">---------</option>';
+                data.forEach(comuna => {
+                    const option = document.createElement('option');
+                    option.value = comuna.id;
+                    option.textContent = comuna.nombre;
+                    comunaSelect.appendChild(option);
+                });
+            });
+    } else {
+        comunaSelect.innerHTML = '<option value="">---------</option>';
+    }
+});
+</script>
+{% endblock %}

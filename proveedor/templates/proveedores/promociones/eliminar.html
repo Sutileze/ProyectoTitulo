@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Promoción - Proveedor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirm-container {
+        max-width: 600px;
+        margin: 3rem auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .confirm-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .confirm-container h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #dc3545;
+    }
+
+    .promocion-info {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 1.5rem 0;
+        text-align: left;
+    }
+
+    .promocion-info h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+        color: #1a1a1a;
+    }
+
+    .promocion-info p {
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+
+    .promocion-fechas {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .fecha-item {
+        flex: 1;
+        background: white;
+        padding: 0.5rem;
+        border-radius: 6px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .fecha-label {
+        color: #999;
+        font-size: 0.8rem;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .fecha-value {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .confirm-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        padding: 0.75rem 2rem;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel {
+        background-color: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-cancel:hover {
+        background-color: #e8e8e8;
+        transform: translateY(-2px);
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+        .confirm-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+
+        .promocion-fechas {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="confirm-container">
+        <div class="confirm-icon">⚠️</div>
+        <h1>¿Eliminar esta promoción?</h1>
+        <p style="color: #666;">Esta acción desactivará la promoción. No podrás recuperarla fácilmente.</p>
+
+        <div class="promocion-info">
+            <h3>🎁 {{ promocion.titulo }}</h3>
+            <p>{{ promocion.descripcion|truncatewords:30 }}</p>
+            
+            <div class="promocion-fechas">
+                <div class="fecha-item">
+                    <span class="fecha-label">Inicio</span>
+                    <span class="fecha-value">{{ promocion.fecha_inicio|date:"d/m/Y" }}</span>
+                </div>
+                <div class="fecha-item">
+                    <span class="fecha-label">Fin</span>
+                    <span class="fecha-value">{{ promocion.fecha_fin|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+
+            {% if promocion.descuento %}
+            <p style="margin-top: 1rem;">
+                <strong>💰 Descuento:</strong> {{ promocion.descuento }}%
+            </p>
+            {% endif %}
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="confirm-actions">
+                <a href="{% url 'proveedores:lista_promociones' %}" class="btn btn-cancel">
+                    ← Cancelar
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    🗑️ Sí, eliminar promoción
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

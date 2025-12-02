@@ -1,0 +1,452 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Club Almacén{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* VARIABLES DE MODO CLARO Y OSCURO */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --accent-color: #0095ff;
+            --shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #404040;
+            --shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* HEADER */
+        .header {
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow);
+            transition: background-color 0.3s ease;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-menu a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-menu a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Usuario logueado */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .user-info:hover {
+            background: var(--border-color);
+        }
+
+        .user-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            overflow: hidden;
+        }
+
+        .user-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-name {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .user-dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 0.5rem 0;
+            min-width: 200px;
+            margin-top: 0.5rem;
+            z-index: 1000;
+            border: 1px solid var(--border-color);
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .dropdown-menu a:hover {
+            background: var(--bg-secondary);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 0.5rem 0;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background-color: #0077cc;
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 0.6rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Mensajes Flash */
+        .messages {
+            max-width: 1400px;
+            margin: 1rem auto;
+            padding: 0 2rem;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert::before {
+            font-size: 1.5rem;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-success::before {
+            content: "✓";
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-error::before {
+            content: "✗";
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-warning::before {
+            content: "⚠";
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .alert-info::before {
+            content: "ℹ";
+        }
+
+        /* Modo oscuro específico para alertas */
+        body.dark-mode .alert-success {
+            background-color: #1e4620;
+            color: #a3e4a7;
+        }
+
+        body.dark-mode .alert-error {
+            background-color: #4a1f21;
+            color: #f5c6cb;
+        }
+
+        body.dark-mode .alert-warning {
+            background-color: #4a3f1f;
+            color: #ffeaa7;
+        }
+
+        body.dark-mode .alert-info {
+            background-color: #1f3a4a;
+            color: #bee5eb;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .nav-menu {
+                flex-wrap: wrap;
+                width: 100%;
+            }
+
+            .user-dropdown {
+                width: 100%;
+            }
+
+            .user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .dropdown-menu {
+                position: static;
+                display: none;
+                width: 100%;
+                margin-top: 0.5rem;
+                box-shadow: none;
+                border: 1px solid var(--border-color);
+            }
+
+            .user-dropdown:hover .dropdown-menu {
+                display: block;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-content">
+            <a href="{% url 'plataforma_comerciante' %}" class="logo">
+                <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Club Almacén" class="logo-icon">
+                Plataforma de Comerciantes
+            </a>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="{% url 'proveedores:directorio_proveedores' %}">📋 Directorio</a></li>
+                   
+                    {% if user.is_authenticated %}
+                        <!-- Usuario logueado con dropdown -->
+                        <li class="user-dropdown">
+                            <div class="user-info">
+                                <div class="user-icon" id="userAvatar">
+                                    {% if user.proveedor.foto_perfil %}
+                                        <img src="{{ user.proveedor.foto_perfil.url }}" alt="Foto de perfil">
+                                    {% elif user.first_name %}
+                                        {{ user.first_name|slice:":1"|upper }}
+                                    {% else %}
+                                        {{ user.email|slice:":1"|upper }}
+                                    {% endif %}
+                                </div>
+                                <span class="user-name">
+                                    {% if user.first_name %}
+                                        {{ user.first_name }}
+                                    {% else %}
+                                        {{ user.email|truncatechars:20 }}
+                                    {% endif %}
+                                </span>
+                                <span style="font-size: 0.7rem;">▼</span>
+                            </div>
+                            <div class="dropdown-menu">
+                                <a href="{% url 'proveedores:perfil_proveedor' %}">
+                                    <span>👤</span> Mi Panel
+                                </a>
+                                <a href="{% url 'proveedores:configuracion' %}">
+                                    <span>⚙️</span> Configuración
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="{% url 'logout' %}">
+                                    <span>🚪</span> Cerrar Sesión
+                                </a>
+                            </div>
+                        </li>
+                    {% else %}
+                        <!-- Usuario NO logueado -->
+                        <li><a href="{% url 'login' %}" class="btn-secondary">Iniciar Sesión</a></li>
+                        <li><a href="{% url 'proveedores:crear_perfil_proveedor' %}" class="btn-primary">Registrarse</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Mensajes Flash -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // ========== SINCRONIZACIÓN EN TIEMPO REAL ENTRE PESTAÑAS ==========
+        window.addEventListener('storage', function(e) {
+            // Sincronizar modo oscuro entre pestañas
+            if (e.key === 'darkMode') {
+                const isDark = e.newValue === 'true';
+                document.body.classList.toggle('dark-mode', isDark);
+            }
+        });
+
+        // ========== AUTO-CERRAR MENSAJES FLASH ==========
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                alert.style.transition = 'opacity 0.5s ease';
+                alert.style.opacity = '0';
+                setTimeout(function() {
+                    alert.remove();
+                }, 500);
+            });
+        }, 5000); // Se cierran después de 5 segundos
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

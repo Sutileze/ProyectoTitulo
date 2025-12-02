@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% block title %}Enviar Solicitud - Proveedor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 700px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .form-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .form-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .form-header p {
+        color: #666;
+    }
+
+    .comercio-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+
+    .comercio-info h3 {
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .comercio-info p {
+        margin: 0.3rem 0;
+        opacity: 0.9;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0095ff;
+        box-shadow: 0 0 0 3px rgba(0,149,255,0.1);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 150px;
+        font-family: inherit;
+    }
+
+    .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        color: #666;
+        font-size: 1rem;
+    }
+
+    /* Estadísticas Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+
+    .stat-icon.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .stat-icon.green { background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%); }
+    .stat-icon.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .stat-icon.teal { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+
+    .stat-content h3 {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 0.3rem;
+        font-weight: 500;
+    }
+
+    .stat-content p {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+
+    /* Acciones Rápidas */
+    .quick-actions {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+
+    .quick-actions h2 {
+        font-size: 1.3rem;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+    }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 1rem;
+        background: #f5f5f5;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #333;
+        transition: all 0.2s;
+        border: 1px solid #e0e0e0;
+    }
+
+    .action-btn:hover {
+        background: #0095ff;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,149,255,0.2);
+    }
+
+    .action-btn span {
+        font-size: 1.5rem;
+    }
+
+    .action-btn p {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    /* Info del perfil */
+    .profile-info {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .profile-info h2 {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: #666;
+        font-weight: 500;
+    }
+
+    .info-value {
+        color: #1a1a1a;
+        font-weight: 600;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .actions-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="productos-container">
+        <div class="page-header">
+            <h1 class="page-title">📦 Mis Productos y Servicios</h1>
+            <a href="{% url 'proveedores:crear_producto' %}" class="btn-new">
+                ➕ Nuevo Producto
+            </a>
+        </div>
+
+        {% if productos %}
+        <div class="productos-grid">
+            {% for producto in productos %}
+            <div class="producto-card">
+                <div class="producto-imagen">
+                    {% if producto.imagen %}
+                        <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                    {% else %}
+                        <span class="placeholder">📦</span>
+                    {% endif %}
+                    {% if producto.destacado %}
+                        <span class="producto-badge">⭐ Destacado</span>
+                    {% endif %}
+                </div>
+
+                <div class="producto-content">
+                    <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+                    <p class="producto-descripcion">{{ producto.descripcion|truncatewords:15 }}</p>
+                    
+                    {% if producto.precio_referencia %}
+                    <div class="producto-precio">${{ producto.precio_referencia|floatformat:0 }}</div>
+                    {% endif %}
+
+                    <span class="producto-estado {% if producto.activo %}estado-activo{% else %}estado-inactivo{% endif %}">
+                        {% if producto.activo %}✓ Activo{% else %}✗ Inactivo{% endif %}
+                    </span>
+
+                    <div class="producto-actions">
+                        <a href="{% url 'proveedores:editar_producto' producto.id %}" class="btn-action btn-edit">
+                            ✏️ Editar
+                        </a>
+                        <a href="{% url 'proveedores:eliminar_producto' producto.id %}" class="btn-action btn-delete">
+                            🗑️ Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>📦 No tienes productos registrados</h3>
+            <p style="color: #666; margin-bottom: 1.5rem;">Comienza agregando tus productos y servicios</p>
+            <a href="{% url 'proveedores:crear_producto' %}" class="btn-new">
+                ➕ Crear mi primer producto
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

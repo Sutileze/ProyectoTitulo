@@ -1,0 +1,571 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Plataforma de Comerciantes</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#005A9C",
+                "secondary": "#FF9800",
+                "background-light": "#F4F6F8",
+                "background-dark": "#101c22",
+                "text-light": "#333333",
+                "text-dark": "#F4F6F8",
+                "text-muted-light": "#666666",
+                "text-muted-dark": "#a0aec0",
+              },
+              fontFamily: {
+                "display": ["Work Sans", "sans-serif"],
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+    
+    <style>
+        .off-canvas-panel {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(100%); /* Oculto a la derecha */
+        }
+        .off-canvas-panel.active {
+            transform: translateX(0); /* Visible */
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+    <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+            <header class="flex items-center justify-between whitespace-nowrap bg-white dark:bg-background-dark border-b border-solid border-gray-200 dark:border-gray-700 px-10 py-3 shadow-sm sticky top-0 z-50">
+                <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-3">
+                        <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Logo de la Plataforma" class="h-24 w-auto"/>
+                    </div>
+                    <nav class="hidden md:flex gap-6 text-text-muted-light dark:text-text-muted-dark font-semibold text-sm">
+                        <a href="{% url 'plataforma_comerciante' %}" class="text-primary transition-colors">Plataforma</a>
+                        <a href="{% url 'directorio' %}" class="hover:text-primary transition-colors">Proveedores</a> 
+                        <a href="{% url 'beneficios' %}" class="hover:text-primary transition-colors">Beneficios</a>
+                        <a href="{% url 'redes_sociales' %}" class="hover:text-primary transition-colors">Redes Sociales</a>
+                        <a href="{% url 'crear_ticket_soporte' %}" class="btn btn-outline-danger"><i class="bi bi-life-preserver"></i> Solicitar soporte</a>
+                    </nav>
+                </div>
+                <div class="flex justify-end gap-4 items-center">
+                    <button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-transparent text-text-muted-light dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <span class="material-symbols-outlined text-2xl">notifications</span>
+                    </button>
+                    
+                    <a href="{% url 'perfil' %}" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
+                            data-alt="Foto de {{ comerciante.nombre_apellido }}" 
+                            style='background-image: url("{{ comerciante.get_profile_picture_url }}");'>
+                        </div>
+                        
+                        <div class="flex flex-col text-left hidden sm:block">
+                            <p class="text-text-light dark:text-text-dark text-sm font-semibold leading-none">{{ comerciante.nombre_apellido|truncatewords:2 }}</p>
+                            <p class="text-text-muted-light dark:text-text-muted-dark text-xs leading-none mt-1">{{ rol_usuario }}</p>
+                        </div>
+                    </a>
+                </div>
+            </header>
+            
+            <main class="flex-1 w-full max-w-screen-2xl mx-auto p-6 lg:p-8">
+                {% if messages %}
+                    <div class="mb-6">
+                    {% for message in messages %}
+                        <div class="p-3 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-300{% elif message.tags == 'success' %}bg-green-100 text-green-700 border border-green-300{% else %}bg-blue-100 text-blue-700 border border-blue-300{% endif %} mb-2">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="grid grid-cols-12 gap-8">
+                    
+                    <aside class="col-span-12 lg:col-span-3 order-2 lg:order-1">
+                        <div class="space-y-8">
+                            <div class="bg-white dark:bg-white p-6 rounded-xl shadow-sm">
+                                <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4">Accesos Rápidos</h3>
+                                <div class="flex flex-col gap-2">
+                                    <a class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-text-light dark:text-text-dark transition-colors duration-200" href="#">
+                                        <span class="material-symbols-outlined text-primary text-2xl">star</span>
+                                        <p class="font-medium">Beneficios</p>
+                                    </a>
+                                    <a class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-text-light dark:text-text-dark transition-colors duration-200" href="#">
+                                        <span class="material-symbols-outlined text-primary text-2xl">groups</span>
+                                        <p class="font-medium">Proveedores</p>
+                                    </a>
+                                    <a class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-text-light dark:text-text-dark transition-colors duration-200" href="#">
+                                        <span class="material-symbols-outlined text-primary text-2xl">build</span>
+                                        <p class="font-medium">Herramientas</p>
+                                    </a>
+                                    <a class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-text-light dark:text-text-dark transition-colors duration-200" href="#">
+                                        <span class="material-symbols-outlined text-primary text-2xl">school</span>
+                                        <p class="font-medium">Capacitación</p>
+                                    </a>
+                                    <a class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-text-light dark:text-text-dark transition-colors duration-200" href="#">
+                                        <span class="material-symbols-outlined text-primary text-2xl">help</span>
+                                        <p class="font-medium">Ayuda</p>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <main class="col-span-12 lg:col-span-6 order-1 lg:order-2">
+                        <div class="space-y-8">
+                            <div class="bg-white dark:bg-white rounded-xl shadow-sm p-6">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                                    <h1 class="text-text-light dark:text-text-dark text-2xl font-bold tracking-[-0.015em] shrink-0">Foro</h1>
+                                    
+                                    <div class="flex flex-col sm:flex-row gap-4 items-center justify-end w-full sm:w-auto">
+                                        
+                                        <div class="relative w-full lg:w-48">
+                                            <button type="button" 
+                                                    id="filter-toggle-btn"
+                                                    class="flex justify-between items-center w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-text-light dark:text-text-dark font-semibold border border-gray-300 dark:border-gray-600"
+                                                    onclick="toggleFilter('category-checklist-content', 'filter-icon-btn')">
+                                                <span>Filtrar</span>
+                                                <span id="filter-icon-btn" class="material-symbols-outlined text-base transition-transform duration-300">add</span>
+                                            </button>
+
+                                            <form method="GET" action="{% url 'plataforma_comerciante' %}" id="category-checklist-content" class="absolute right-0 mt-1 z-10 hidden w-full lg:w-48 p-3 rounded-lg shadow-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 space-y-2">
+                                                
+                                                <p class="text-sm font-medium text-text-light dark:text-text-dark mb-1 border-b pb-1">Seleccionar Categorías:</p>
+
+                                                <label class="flex items-center space-x-3">
+                                                    <input type="checkbox" name="categoria" value="TODAS" 
+                                                           class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary"
+                                                           {% if 'TODAS' in categoria_seleccionada or not categoria_seleccionada %}checked{% endif %}
+                                                           onclick="document.querySelectorAll('#category-checklist-content input[name=categoria]').forEach(cb => { if(cb.value !== 'TODAS') cb.checked = false; });">
+                                                    <span class="text-sm text-text-light dark:text-text-dark">Todas</span>
+                                                </label>
+                                                
+                                                {% for key, value in CATEGORIA_POST_CHOICES %}
+                                                    <label class="flex items-center space-x-3">
+                                                        <input type="checkbox" name="categoria" value="{{ key }}" 
+                                                               class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary"
+                                                               {% if key in categoria_seleccionada and 'TODAS' not in categoria_seleccionada %}checked{% endif %}
+                                                               onclick="document.querySelector('#category-checklist-content input[value=TODAS]').checked = false;">
+                                                        <span class="text-sm text-text-light dark:text-text-dark">{{ value }}</span>
+                                                    </label>
+                                                {% endfor %}
+
+                                                <button type="submit" class="mt-4 w-full h-8 bg-primary text-white text-sm rounded hover:bg-primary/90 transition-colors">
+                                                    Aplicar Filtro
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <button onclick="document.getElementById('off-canvas-publicar').classList.add('active');" 
+                                                class="min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-secondary text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] hover:bg-secondary/90 transition-colors duration-200 hidden sm:flex">
+                                            <span class="material-symbols-outlined">add</span>
+                                            <span class="truncate">Crear publicación</span>
+                                        </button>
+                                    </div>
+                                    </div>
+                                
+                                <div class="space-y-4">
+                                    {% for post in posts %}
+                                    
+                                    <div id="post-{{ post.id }}" class="block text-decoration-none text-inherit bg-white dark:bg-white rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                        <div class="flex p-4 hover:bg-gray-50 dark:hover:bg-gray-100 transition-colors">
+                                            
+                                            <div class="shrink-0 mr-3">
+                                                <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12" 
+                                                     data-alt="Avatar de {{ post.comerciante.nombre_apellido }}" 
+                                                     style='background-image: url("{{ post.comerciante.get_profile_picture_url }}");'>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <div class="flex items-center text-sm">
+                                                        <p class="font-bold text-text-light dark:text-text-dark mr-2">{{ post.comerciante.nombre_apellido|truncatewords:2 }}</p>
+                                                        <p class="text-text-muted-light dark:text-text-muted-dark">@{{ post.comerciante.nombre_negocio|slugify }}</p>
+                                                        <span class="text-text-muted-light dark:text-text-muted-dark mx-1">•</span>
+                                                        <p class="text-text-muted-light dark:text-text-muted-dark">{{ post.fecha_publicacion|timesince }}</p>
+                                                    </div>
+                                                    <span class="text-xs font-medium uppercase text-primary">{{ post.get_categoria_display }}</span>
+                                                </div>
+                                                
+                                                <p class="text-base font-semibold text-text-light dark:text-text-dark mb-1">{{ post.titulo }}</p>
+                                                <p class="text-text-light dark:text-text-dark text-sm mb-2 whitespace-pre-wrap">{{ post.contenido|truncatechars:300 }}</p>
+
+                                                {% if post.imagen_url %}
+                                                    <div class="block mb-2 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-300">
+                                                        <a href="{{ post.imagen_url }}" target="_blank">
+                                                            <img src="{{ post.imagen_url }}" alt="Contenido multimedia del post" class="max-h-60 w-full object-cover"/>
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                                
+                                                <div class="flex items-center text-text-muted-light dark:text-text-muted-dark text-sm mt-3">
+                                                    
+                                                    <form method="POST" action="{% url 'like_post' post_id=post.id %}" class="inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit"
+                                                                class="flex items-center mr-6 hover:text-red-500 transition-colors">
+                                                            <span class="material-symbols-outlined text-base mr-1 
+                                                                {% if post.is_liked %} text-red-500 {% else %} text-gray-500 {% endif %}">
+                                                                favorite
+                                                            </span>
+                                                            <span class="likes-count">{{ post.likes_count }}</span>
+                                                        </button>
+                                                    </form>
+                                                    
+                                                    <button onclick="toggleComments('{{ post.id }}')" 
+                                                            class="flex items-center mr-4 hover:text-primary transition-colors">
+                                                        <span class="material-symbols-outlined text-base mr-1">forum</span>
+                                                        <span>{{ post.comentarios_count }} Comentarios</span>
+                                                    </button>
+                                                    
+                                                    <p class="text-xs text-primary/70">
+                                                        {% if post.etiquetas %}Etiquetas: {{ post.etiquetas }}{% endif %}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="comments-section-{{ post.id }}" class="p-4 border-t border-gray-200 dark:border-gray-700 hidden">
+                                            
+                                            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                                                <h4 class="text-sm font-bold text-text-light dark:text-text-dark mb-3">Añadir Comentario</h4>
+                                                <form method="POST" action="{% url 'add_comment' post_id=post.id %}" novalidate>
+                                                    {% csrf_token %}
+                                                    <div class="mb-3">
+                                                        <textarea name="{{ comentario_form.contenido.name }}" 
+                                                            placeholder="Escribe tu comentario..." rows="2"
+                                                            class="w-full resize-none rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary focus:border-primary p-[10px] text-sm h-auto min-h-20"
+                                                        ></textarea>
+                                                        {% for error in comentario_form.contenido.errors %}
+                                                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="flex justify-end">
+                                                        <button type="submit" class="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors">
+                                                            Publicar
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            
+                                            <h3 class="text-base font-bold text-text-light dark:text-text-dark mb-4 border-b pb-2">Comentarios Recientes</h3>
+                                            <div id="comment-list-{{ post.id }}" class="space-y-4">
+                                                {% for comentario in post.comentarios.all %} 
+                                                    
+                                                    <div class="flex py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0 comment-item-{{ post.id }} {% if forloop.counter > 5 %} hidden {% endif %}">
+                                                        
+                                                        <div class="shrink-0 mr-3">
+                                                            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8" 
+                                                                 style='background-image: url("{{ comentario.comerciante.get_profile_picture_url }}");'>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="flex items-center text-xs mb-1">
+                                                                <p class="font-bold text-text-light dark:text-text-dark mr-2">{{ comentario.comerciante.nombre_apellido|truncatewords:2 }}</p>
+                                                                <p class="text-text-muted-light dark:text-text-muted-dark">@{{ comentario.comerciante.nombre_negocio|slugify }}</p>
+                                                                <span class="text-text-muted-light dark:text-text-muted-dark mx-1">•</span>
+                                                                <p class="text-text-muted-light dark:text-text-muted-dark">{{ comentario.fecha_creacion|timesince }}</p>
+                                                            </div>
+                                                            <p class="text-text-light dark:text-text-dark text-sm whitespace-pre-wrap">{{ comentario.contenido }}</p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                {% empty %}
+                                                    <p class="text-text-muted-light text-sm text-center py-2">Sé el primero en comentar esta publicación.</p>
+                                                {% endfor %}
+                                            </div>
+                                            
+                                            {% if post.comentarios_count > 5 %}
+                                            <div class="mt-4 text-center">
+                                                <button id="show-more-btn-{{ post.id }}" onclick="toggleHiddenComments('{{ post.id }}')" class="text-primary text-sm font-semibold hover:underline">
+                                                    Ver más comentarios
+                                                </button>
+                                            </div>
+                                            {% endif %}
+                                            
+                                        </div>
+                                        </div>
+                                    {% empty %}
+                                        <div class="p-4 text-center text-text-muted-light dark:text-text-muted-dark">
+                                            Aún no hay publicaciones en esta categoría. ¡Sé el primero en crear una!
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+
+                    <aside class="col-span-12 lg:col-span-3 order-3">
+                        <div class="space-y-8">
+                            
+                            <div class="bg-white dark:bg-white p-6 rounded-xl shadow-sm">
+                                <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary text-xl">feed</span>
+                                    Noticias y Medios
+                                </h3>
+                                
+                                <div class="space-y-4">
+                                    {% if news_preview %}
+                                        {% for item in news_preview %}
+                                            <div class="flex items-start border-b border-gray-100 dark:border-gray-700 pb-3 last:border-b-0 last:pb-0">
+                                                <span class="material-symbols-outlined text-secondary text-base mr-2 mt-1">lens_blur</span>
+                                                <div>
+                                                    <a href="{{ item.link }}" target="_blank" class="text-text-light dark:text-text-dark font-semibold text-sm leading-snug hover:text-primary transition-colors">
+                                                        {{ item.title|truncatechars:70 }}
+                                                    </a>
+                                                    <p class="text-text-muted-light text-xs mt-1">Fuente: Negocios</p>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-text-muted-light text-sm">Accede a feeds de LUN, La Estrella y revistas del rubro, actualizadas automáticamente.</p>
+                                    {% endif %}
+                                    
+                                    <div class="pt-2 border-t border-gray-100 dark:border-gray-700">
+                                        <a class="text-primary text-sm font-bold mt-1 inline-flex items-center hover:underline" href="{% url 'noticias' %}">
+                                            Ver todas las fuentes 
+                                            <span class="material-symbols-outlined text-base ml-1">arrow_forward</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-white p-6 rounded-xl shadow-sm">
+                                <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4">Próximos Eventos</h3>
+                                <div class="space-y-4">
+                                    <div class="flex gap-4">
+                                        <div class="flex flex-col items-center justify-center bg-primary/10 dark:bg-primary/20 text-primary rounded-lg p-2 w-16 h-16 shrink-0">
+                                            <span class="text-sm font-bold">JUL</span>
+                                            <span class="2xl font-bold">25</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-text-light dark:text-text-dark font-semibold">Taller Online: Marketing en Redes Sociales</p>
+                                            <p class="text-text-muted-light dark:text-text-muted-dark text-sm">18:00 - Online</p>
+                                            <a class="text-primary text-xs font-bold mt-1 inline-block" href="#">Ver detalles</a>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-4">
+                                        <div class="flex flex-col items-center justify-center bg-primary/10 dark:bg-primary/20 text-primary rounded-lg p-2 w-16 h-16 shrink-0">
+                                            <span class="text-sm font-bold">AGO</span>
+                                            <span class="2xl font-bold">12</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-text-light dark:text-text-dark font-semibold">Reunión Mensual de Comerciantes - Zona Centro</p>
+                                            <p class="text-text-muted-light dark:text-text-muted-dark text-sm">19:30 - Centro Cívico</p>
+                                            <a class="text-primary text-xs font-bold mt-1 inline-block" href="#">Ver detalles</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div class="fixed bottom-0 left-0 w-full p-4 lg:hidden z-40 bg-background-light dark:bg-background-dark border-t border-gray-200 dark:border-gray-700 shadow-lg">
+        <button onclick="document.getElementById('off-canvas-publicar').classList.add('active');" 
+                class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-secondary text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] hover:bg-secondary/90 transition-colors duration-200">
+            <span class="material-symbols-outlined">add</span>
+            <span class="truncate">Crear publicación en el Foro</span>
+        </button>
+    </div>
+
+    <div id="off-canvas-publicar" class="off-canvas-panel fixed top-0 right-0 w-full sm:w-1/2 lg:w-1/3 h-full bg-white dark:bg-white z-50 shadow-2xl overflow-y-auto p-6 flex flex-col">
+        <div class="flex justify-between items-center pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-2xl font-bold text-text-light dark:text-text-dark">Crear Nueva Publicación</h3>
+            <button onclick="document.getElementById('off-canvas-publicar').classList.remove('active');" 
+                    class="text-text-muted-light dark:text-text-muted-dark hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-3xl">close</span>
+            </button>
+        </div>
+
+        <form method="POST" action="{% url 'crear_publicacion' %}" enctype="multipart/form-data" class="space-y-4 flex-grow flex flex-col">
+            {% csrf_token %}
+            
+            <div>
+                <label for="{{ post_form.titulo.id_for_label }}" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">{{ post_form.titulo.label }}</label>
+                {{ post_form.titulo }}
+                {% for error in post_form.titulo.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div>
+                <label for="{{ post_form.categoria.id_for_label }}" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">{{ post_form.categoria.label }}</label>
+                {{ post_form.categoria }}
+                {% for error in post_form.categoria.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div>
+                <label for="{{ post_form.contenido.id_for_label }}" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">{{ post_form.contenido.label }}</label>
+                <textarea name="{{ comentario_form.contenido.name }}" id="{{ post_form.contenido.id_for_label }}"
+                    placeholder="Escribe tu comentario..." rows="5"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-primary placeholder:text-text-muted-light dark:placeholder:text-text-muted-dark p-[10px] text-base font-normal leading-normal max-h-48 min-h-24">
+                </textarea>
+                {% for error in post_form.contenido.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div>
+                <label for="{{ post_form.uploaded_file.id_for_label }}" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">{{ post_form.uploaded_file.label }}</label>
+                {{ post_form.uploaded_file }}
+                <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">Sube un archivo desde tu PC.</p>
+                {% for error in post_form.uploaded_file.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            
+            <div>
+                <label for="{{ post_form.url_link.id_for_label }}" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">{{ post_form.url_link.label }}</label>
+                {{ post_form.url_link }}
+                <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">Opcional: URL de una imagen o link externo.</p>
+                {% for error in post_form.url_link.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div>
+                <label for="{{ post_form.etiquetas_input.id_for_label }}" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">{{ post_form.etiquetas_input.label }}</label>
+                {{ post_form.etiquetas_input }}
+                <p class="text-xs text-text-muted-light dark:text-text-muted-dark mt-1">{{ post_form.etiquetas_input.help_text }}</p>
+                {% for error in post_form.etiquetas_input.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            
+            <div class="pt-4 mt-auto border-t border-gray-200 dark:border-gray-700">
+                <button type="submit" class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-secondary text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] hover:bg-secondary/90 transition-colors duration-200">
+                    <span class="truncate">Publicar en el Foro</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="editPhotoModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden transition-opacity">
+        <div class="bg-white dark:bg-background-dark p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark mb-4 border-b pb-2">Cambiar Foto de Perfil</h3>
+            <form method="POST" action="{% url 'perfil' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_photo">
+                
+                <div class="mb-4">
+                    <label for="id_foto_perfil" class="block text-sm font-medium text-text-light mb-1">Subir nueva imagen:</label>
+                    <input type="file" name="foto_perfil" id="id_foto_perfil" class="w-full">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('editPhotoModal')" class="px-4 py-2 text-sm font-medium text-text-light rounded-lg hover:bg-gray-100">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-secondary/90">Guardar Foto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editContactModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden transition-opacity">
+        <div class="bg-white dark:bg-background-dark p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark mb-4 border-b pb-2">Editar Datos Personales</h3>
+            <form method="POST" action="{% url 'perfil' %}" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_contact">
+                
+                {% for field in contact_form %}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-text-light mb-1">{{ field.label }}</label>
+                        <input type="{{ field.widget_type }}" name="{{ field.name }}" value="{{ field.value|default:'' }}" class="modal-form-input">
+                    </div>
+                {% endfor %}
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('editContactModal')" class="px-4 py-2 text-sm font-medium text-text-light rounded-lg hover:bg-gray-100">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editBusinessModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden transition-opacity">
+        <div class="bg-white dark:bg-background-dark p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark mb-4 border-b pb-2">Editar Datos del Negocio</h3>
+            <form method="POST" action="{% url 'perfil' %}" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_business">
+                
+                {% for field in business_form %}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-text-light mb-1">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('editBusinessModal')" class="px-4 py-2 text-sm font-medium text-text-light rounded-lg hover:bg-gray-100">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+        
+        // Cierra modales al presionar ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                document.querySelectorAll('.fixed.inset-0').forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+            }
+        });
+
+        // Actualiza la visualización de la foto de perfil en el modal de edición
+        document.querySelector('#editPhotoModal input[type="file"]').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                document.getElementById('profile-picture-display').style.backgroundImage = `url(${e.target.result})`;
+            }
+            
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        });
+
+        
+        // FUNCIÓN: Confirma el cierre de sesión antes de redirigir
+        function confirmLogout() {
+            // Muestra la ventana de confirmación nativa
+            if (window.confirm("¿Estás seguro de que quieres cerrar la sesión?")) {
+                // Si el usuario confirma, redirige al URL de logout de Django
+                window.location.href = "{% url 'logout' %}";
+            }
+        }
+    </script>
+</body>
+</html>

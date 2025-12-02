@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Producto - Proveedor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .form-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .form-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .form-header p {
+        color: #666;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0095ff;
+        box-shadow: 0 0 0 3px rgba(0,149,255,0.1);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .current-image {
+        max-width: 200px;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 2px solid #e0e0e0;
+    }
+
+    .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 0.3rem;
+        display: block;
+    }
+
+    .errorlist {
+        list-style: none;
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin: 0.3rem 0 0 0;
+        padding: 0;
+    }
+
+    .form-check-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+    }
+
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .form-check-label {
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    .btn {
+        padding: 0.75rem 2rem;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel {
+        background-color: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-cancel:hover {
+        background-color: #e8e8e8;
+    }
+
+    .btn-primary {
+        background-color: #0095ff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0077cc;
+    }
+
+    @media (max-width: 768px) {
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-container">
+        <div class="form-header">
+            <h1>✏️ Editar Producto/Servicio</h1>
+            <p>Actualiza la información de tu producto</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                {{ form.nombre.label_tag }}
+                {{ form.nombre }}
+                {% if form.nombre.help_text %}
+                    <small class="help-text">{{ form.nombre.help_text }}</small>
+                {% endif %}
+                {{ form.nombre.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.descripcion.label_tag }}
+                {{ form.descripcion }}
+                {% if form.descripcion.help_text %}
+                    <small class="help-text">{{ form.descripcion.help_text }}</small>
+                {% endif %}
+                {{ form.descripcion.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.categoria.label_tag }}
+                {{ form.categoria }}
+                {% if form.categoria.help_text %}
+                    <small class="help-text">{{ form.categoria.help_text }}</small>
+                {% endif %}
+                {{ form.categoria.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.precio_referencia.label_tag }}
+                {{ form.precio_referencia }}
+                {% if form.precio_referencia.help_text %}
+                    <small class="help-text">{{ form.precio_referencia.help_text }}</small>
+                {% endif %}
+                {{ form.precio_referencia.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.imagen.label_tag }}
+                {% if producto.imagen %}
+                    <img src="{{ producto.imagen.url }}" alt="Imagen actual" class="current-image">
+                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Imagen actual - Puedes subir una nueva</p>
+                {% endif %}
+                {{ form.imagen }}
+                {% if form.imagen.help_text %}
+                    <small class="help-text">{{ form.imagen.help_text }}</small>
+                {% endif %}
+                {{ form.imagen.errors }}
+            </div>
+
+            <div class="form-group">
+                <div class="form-check-group">
+                    {{ form.destacado }}
+                    {{ form.destacado.label_tag }}
+                </div>
+                {% if form.destacado.help_text %}
+                    <small class="help-text">{{ form.destacado.help_text }}</small>
+                {% endif %}
+                {{ form.destacado.errors }}
+            </div>
+
+            <div class="form-group">
+                <div class="form-check-group">
+                    {{ form.activo }}
+                    {{ form.activo.label_tag }}
+                </div>
+                {% if form.activo.help_text %}
+                    <small class="help-text">{{ form.activo.help_text }}</small>
+                {% endif %}
+                {{ form.activo.errors }}
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'proveedores:lista_productos' %}" class="btn btn-cancel">Cancelar</a>
+                <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

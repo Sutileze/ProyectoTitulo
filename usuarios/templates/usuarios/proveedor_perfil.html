@@ -1,0 +1,184 @@
+{% load static %}
+{% load my_custom_filters %} 
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{{ proveedor.nombre }} - Perfil Proveedor</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#005A9C",
+                "secondary": "#FF9800",
+                "background-light": "#F4F6F8",
+                "background-dark": "#101c22",
+                "text-light": "#333333",
+                "text-dark": "#F4F6F8",
+                "text-muted-light": "#666666",
+                "text-muted-dark": "#a0aec0",
+              },
+              fontFamily: {
+                "display": ["Work Sans", "sans-serif"],
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+    <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+            
+            <header class="flex items-center justify-between whitespace-nowrap bg-white dark:bg-background-dark border-b border-solid border-gray-200 dark:border-gray-700 px-10 py-3 shadow-sm sticky top-0 z-50">
+                <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-3">
+                        <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Logo de la Plataforma" class="h-24 w-auto"/>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-4 items-center">
+                    <a href="{% url 'directorio' %}" class="flex items-center text-text-muted-light dark:text-text-muted-dark hover:text-primary">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                        <span class="hidden sm:inline">Volver al Directorio</span>
+                    </a>
+                </div>
+            </header>
+            
+            <main class="flex-1 w-full max-w-screen-lg mx-auto p-6 lg:p-8">
+                
+                <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg mb-8">
+                    
+                    <div class="flex items-center border-b pb-4 mb-4">
+                        <div class="shrink-0 mr-6">
+                            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-20 border-4 border-primary" 
+                                style='background-image: url("{{ proveedor.get_profile_picture_url }}");'>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1">
+                            <h1 class="text-3xl font-bold text-text-light dark:text-text-dark mb-1">{{ proveedor.nombre }}</h1>
+                            <p class="text-text-muted-light dark:text-text-muted-dark text-sm">Proveedor registrado desde {{ proveedor.fecha_registro|date:"d M Y" }}</p>
+                        </div>
+                        
+                        <div class="shrink-0">
+                            {% if is_online_status %}
+                                <span class="flex items-center text-sm font-semibold text-green-600">
+                                    <span class="size-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                                    En línea
+                                </span>
+                            {% else %}
+                                <span class="flex items-center text-sm font-semibold text-gray-500">
+                                    <span class="size-3 bg-gray-500 rounded-full mr-2"></span>
+                                    Última vez hace {{ proveedor.ultima_conexion|timesince }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-primary mb-2">Descripción General</h3>
+                        <p class="text-text-light dark:text-text-dark">{{ proveedor.descripcion|default:"Este proveedor aún no ha añadido una descripción detallada." }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t pt-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-primary mb-2">Rubros que Oferta</h3>
+                            <div class="flex flex-wrap gap-2">
+                                {% for rubro in rubros_ofertados|split:"," %}
+                                <span class="text-sm font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full">{{ rubro|trim }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-primary mb-2">Zona Geográfica</h3>
+                            <p class="text-text-light dark:text-text-dark">{{ zona_geografica|default:"No especificada" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-primary/10 dark:bg-primary/20 p-6 rounded-xl shadow-md flex flex-col items-center mb-8">
+                    <h2 class="text-2xl font-bold text-primary mb-4">Contacto Directo</h2>
+                    
+                    <button onclick="openModal('contactModal')"
+                            class="px-8 py-3 bg-primary text-white text-lg font-bold rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
+                        <span class="material-symbols-outlined">chat</span>
+                        Iniciar Chat / Ver Contacto
+                    </button>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-text-light dark:text-text-dark mb-4">Propuestas y Servicios</h2>
+                <div class="space-y-4">
+                    {% for propuesta in propuestas %}
+                    <div class="bg-white dark:bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                        <h4 class="text-lg font-semibold text-text-light mb-1">{{ propuesta.titulo }}</h4>
+                        <p class="text-sm text-text-muted-light">{{ propuesta.proveedor.descripcion|truncatechars:100 }}</p>
+                    </div>
+                    {% empty %}
+                        <p class="text-text-muted-light text-sm">Este proveedor aún no ha publicado propuestas de servicios.</p>
+                    {% endfor %}
+                </div>
+                
+            </main>
+        </div>
+        
+        <footer class="text-center text-xs text-text-muted-light border-t border-gray-200 py-4 mt-10">
+            <p>Soporte | Preguntas Frecuentes | Términos de Servicio</p>
+            <p class="mt-1">© 2025 Plataforma de Comerciantes. Todos los derechos reservados.</p>
+        </footer>
+
+        <div id="contactModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden transition-opacity">
+            <div class="bg-white dark:bg-background-dark p-8 rounded-xl shadow-2xl w-full max-w-sm">
+                <h3 class="text-xl font-bold text-text-light dark:text-text-dark mb-4">Datos de Contacto Externo</h3>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary">email</span>
+                        <p class="text-text-light dark:text-text-dark font-medium">{{ proveedor.email_contacto|default:"No disponible" }}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-green-500">phone</span>
+                        <p class="text-text-light dark:text-text-dark font-medium">{{ proveedor.whatsapp_contacto|default:"No disponible" }}</p>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-text-muted-light mt-6">
+                    Para iniciar una conversación de chat, usa uno de los métodos de contacto externos.
+                </p>
+
+                <div class="flex justify-end mt-4">
+                    <button type="button" onclick="closeModal('contactModal')" class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Funciones de Modal
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+        
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                document.querySelectorAll('.fixed.inset-0').forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+            }
+        });
+        
+    </script>
+</body>
+</html>
