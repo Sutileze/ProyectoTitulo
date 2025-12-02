@@ -1,0 +1,113 @@
+{# soporte/templates/soporte/base_soporte.html #}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Panel Soporte{% endblock %}</title>
+
+    <!-- Bootstrap -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link 
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous"
+    >
+    <link 
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    >
+
+    <style>
+        body {
+            background-color: #f5f5f7;
+        }
+        .sidebar {
+            min-height: 100vh;
+        }
+        .sidebar .nav-link.active {
+            background-color: #0d6efd;
+            color: #fff !important;
+        }
+        .sidebar .nav-link {
+            border-radius: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .content-wrapper {
+            padding: 1.5rem;
+        }
+        .table-actions a {
+            margin-right: 0.3rem;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- SIDEBAR -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-white border-end sidebar px-3 py-4">
+                <div class="d-flex flex-column h-100">
+                    <div class="mb-3">
+                        <h4 class="fw-bold mb-0">
+                            <i class="bi bi-life-preserver me-1"></i> Soporte Técnico
+                        </h4>
+                        <small class="text-muted">
+                            {% if tecnico %}
+                                {{ tecnico.nombre_apellido }} ({{ tecnico.get_rol_display|default:tecnico.rol }})
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <hr>
+
+                    <ul class="nav flex-column mb-3">
+                        <li class="nav-item">
+                            <a class="nav-link {% block nav_panel_active %}{% endblock %}" 
+                            href="{% url 'soporte:panel_soporte' %}">
+                                <i class="bi bi-speedometer2 me-2"></i> Panel de soporte
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="mt-auto">
+                        <a href="{% url 'plataforma_comerciante' %}" class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="bi bi-arrow-left-circle me-1"></i> Volver a plataforma
+                        </a>
+                        <a href="{% url 'logout' %}" class="btn btn-danger w-100">
+                            <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- CONTENIDO -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content-wrapper">
+
+                {% if messages %}
+                    <div class="mt-2">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script 
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous">
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

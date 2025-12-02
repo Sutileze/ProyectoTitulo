@@ -1,0 +1,19 @@
+{# administrador/templates/administrador/beneficio_confirmar_eliminar.html #}
+{% extends "administrador/base_admin.html" %}
+{% block title %}Eliminar beneficio{% endblock %}
+{% block nav_beneficios_active %}active{% endblock %}
+
+{% block content %}
+<h2 class="h4 mb-3">¿Eliminar beneficio?</h2>
+
+<div class="alert alert-warning">
+    Estás a punto de eliminar el beneficio:
+    <strong>{{ beneficio.titulo }}</strong>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a href="{% url 'admin_beneficios' %}" class="btn btn-secondary ms-2">Cancelar</a>
+</form>
+{% endblock %}

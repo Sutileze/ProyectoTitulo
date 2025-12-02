@@ -1,0 +1,58 @@
+{# administrador/templates/administrador/posts_list.html #}
+{% extends "administrador/base_admin.html" %}
+{% block title %}Publicaciones{% endblock %}
+{% block nav_posts_active %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="h3 mb-1">Publicaciones del foro</h2>
+        <p class="text-muted">Listado de posts creados por los comerciantes.</p>
+    </div>
+    <a href="{% url 'crear_post_admin' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Nueva publicación
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Autor</th>
+                    <th>Categoría</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in posts %}
+                <tr>
+                    <td>{{ p.id }}</td>
+                    <td>{{ p.titulo }}</td>
+                    <td>{{ p.comerciante.nombre_apellido }}</td>
+                    <td>{{ p.get_categoria_display }}</td>
+                    <td>{{ p.fecha_publicacion|date:"d/m/Y H:i" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'editar_post_admin' p.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'eliminar_post_admin' p.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        No hay publicaciones registradas.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

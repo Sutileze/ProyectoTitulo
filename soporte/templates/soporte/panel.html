@@ -1,0 +1,90 @@
+{# soporte/templates/soporte/panel.html #}
+{% extends "soporte/base_soporte.html" %}
+
+{% block title %}Panel de Soporte{% endblock %}
+{% block nav_panel_active %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-3">
+    <div>
+        <h2 class="h3 mb-1">Tickets de soporte</h2>
+        <p class="text-muted mb-0">
+            Gestión de solicitudes de ayuda enviadas por los comerciantes.
+        </p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Asunto</th>
+                        <th>Comerciante</th>
+                        <th>Prioridad</th>
+                        <th>Estado</th>
+                        <th>Creado en</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for t in tickets %}
+                    <tr>
+                        <td>#{{ t.id }}</td>
+                        <td>
+                            <strong>{{ t.asunto }}</strong><br>
+                            <small class="text-muted">
+                                {{ t.descripcion|truncatechars:60 }}
+                            </small>
+                        </td>
+                        <td>
+                            {{ t.comerciante.nombre_apellido }}<br>
+                            <small class="text-muted">{{ t.comerciante.email }}</small>
+                        </td>
+                        <td>
+                            {% if t.prioridad == 'BAJA' %}
+                                <span class="badge bg-success">Baja</span>
+                            {% elif t.prioridad == 'MEDIA' %}
+                                <span class="badge bg-info text-dark">Media</span>
+                            {% elif t.prioridad == 'ALTA' %}
+                                <span class="badge bg-warning text-dark">Alta</span>
+                            {% elif t.prioridad == 'CRITICA' %}
+                                <span class="badge bg-danger">Crítica</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if t.estado == 'ABIERTO' %}
+                                <span class="badge bg-primary">Abierto</span>
+                            {% elif t.estado == 'EN_PROCESO' %}
+                                <span class="badge bg-warning text-dark">En proceso</span>
+                            {% elif t.estado == 'RESUELTO' %}
+                                <span class="badge bg-success">Resuelto</span>
+                            {% elif t.estado == 'CERRADO' %}
+                                <span class="badge bg-secondary">Cerrado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ t.creado_en|date:"d/m/Y H:i" }}</small>
+                        </td>
+                        <td class="text-end table-actions">
+                            <a href="{% url 'soporte:ticket_detalle' t.id %}" 
+                            class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            No hay tickets de soporte aún.
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
