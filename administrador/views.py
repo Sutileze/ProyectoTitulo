@@ -12,13 +12,8 @@ from .forms import (
     PostAdminForm,
 )
 
-
+#-------------------------------------------Verificar si es admin
 def require_admin():
-    """
-    Revisa si el usuario global actual es admin.
-    Leemos siempre desde usuarios_views.current_logged_in_user
-    para que vea el valor actualizado que se setea en login_view.
-    """
     user = usuarios_views.current_logged_in_user
     if not user:
         return False
@@ -26,8 +21,7 @@ def require_admin():
 
 
 # ========= COMERCIANTES =========
-
-def panel_admin_view(request):
+def panel_admin_view(request):#--------------Muestra todos los comenrciantes en una tabla
     if not require_admin():
         return redirect('login')
 
@@ -40,7 +34,7 @@ def panel_admin_view(request):
     })
 
 
-def crear_comerciante_view(request):
+def crear_comerciante_view(request):#--------------Crear comerciante
     if not require_admin():
         return redirect('login')
 
@@ -58,7 +52,7 @@ def crear_comerciante_view(request):
     })
 
 
-def editar_comerciante_view(request, comerciante_id):
+def editar_comerciante_view(request, comerciante_id):#--------------Editar comerciante
     if not require_admin():
         return redirect('login')
 
@@ -79,7 +73,7 @@ def editar_comerciante_view(request, comerciante_id):
     })
 
 
-def eliminar_comerciante_view(request, comerciante_id):
+def eliminar_comerciante_view(request, comerciante_id): #--------------Eliminar comerciante
     if not require_admin():
         return redirect('login')
 
@@ -97,7 +91,7 @@ def eliminar_comerciante_view(request, comerciante_id):
 
 # ========= BENEFICIOS (usuarios.Beneficio) =========
 
-def admin_beneficios_list(request):
+def admin_beneficios_list(request):#--------------Lista de beneficios
     if not require_admin():
         return redirect('login')
 
@@ -110,7 +104,7 @@ def admin_beneficios_list(request):
     })
 
 
-def crear_beneficio_view(request):
+def crear_beneficio_view(request):#--------------Crear beneficio
     if not require_admin():
         return redirect('login')
 
@@ -118,8 +112,6 @@ def crear_beneficio_view(request):
         form = BeneficioAdminForm(request.POST, request.FILES)
         if form.is_valid():
             beneficio = form.save(commit=False)
-            # creado_por es opcional (puede ir null), si quieres se puede setear:
-            # beneficio.creado_por = request.user
             beneficio.save()
             messages.success(request, "Beneficio creado correctamente.")
             return redirect('admin_beneficios')
@@ -131,7 +123,7 @@ def crear_beneficio_view(request):
     })
 
 
-def editar_beneficio_view(request, beneficio_id):
+def editar_beneficio_view(request, beneficio_id):#--------------Editar beneficio
     if not require_admin():
         return redirect('login')
 
@@ -152,7 +144,7 @@ def editar_beneficio_view(request, beneficio_id):
     })
 
 
-def eliminar_beneficio_view(request, beneficio_id):
+def eliminar_beneficio_view(request, beneficio_id):#--------------Eliminar beneficio
     if not require_admin():
         return redirect('login')
 
@@ -170,7 +162,7 @@ def eliminar_beneficio_view(request, beneficio_id):
 
 # ========= POSTS (usuarios.Post) =========
 
-def admin_posts_list(request):
+def admin_posts_list(request):#--------------Lista de posts
     if not require_admin():
         return redirect('login')
 
@@ -183,7 +175,7 @@ def admin_posts_list(request):
     })
 
 
-def crear_post_admin_view(request):
+def crear_post_admin_view(request):#--------------Crear post
     if not require_admin():
         return redirect('login')
 
@@ -201,7 +193,7 @@ def crear_post_admin_view(request):
     })
 
 
-def editar_post_admin_view(request, post_id):
+def editar_post_admin_view(request, post_id):#  ------------Editar post
     if not require_admin():
         return redirect('login')
 
@@ -222,7 +214,7 @@ def editar_post_admin_view(request, post_id):
     })
 
 
-def eliminar_post_admin_view(request, post_id):
+def eliminar_post_admin_view(request, post_id):#--------------Eliminar post
     if not require_admin():
         return redirect('login')
 

@@ -49,7 +49,6 @@ class BeneficioAdminForm(forms.ModelForm):
             'foto',
             'vence',
             'categoria',
-            'puntos_requeridos',
             'estado',
         ]
 

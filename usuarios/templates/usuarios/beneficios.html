@@ -36,19 +36,8 @@
     </script>
 
     <style>
-        /* Estilos de la barra de progreso */
-        .progress-bar-container {
-            height: 10px; /* Un poco más alta */
-            background-color: #E0E7FF; /* Un azul muy claro */
-            border-radius: 9999px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-            background-color: #FF9800; /* Color secundario */
-            transition: width 0.5s ease-in-out;
-            min-width: 1px; /* Asegura que la barra sea visible si el porcentaje es 0 */
-        }
+        /* ELIMINADO: Estilos de barra de progreso */
+        
         /* Estilos para iconos de placeholder */
         .placeholder-icon-benefit {
             display: flex;
@@ -85,10 +74,7 @@
                     </nav>
                 </div>
                 <div class="flex justify-end gap-4 items-center">
-                    <div class="flex max-w-[480px] items-center justify-center overflow-hidden rounded-lg h-10 w-auto p-2 bg-gray-100 dark:bg-gray-700 text-text-light dark:text-text-dark">
-                        <span class="material-symbols-outlined text-xl mr-1 text-secondary">star</span>
-                        <span class="text-sm font-semibold">{{ puntos_actuales|default:0 }} Ptos.</span>
-                    </div>
+                    {# ELIMINADO: Display de puntos en el header #}
                     <a href="{% url 'perfil' %}" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
                             data-alt="Foto de {{ comerciante.nombre_apellido }}" 
@@ -110,47 +96,8 @@
                     Descuentos, sorteos y acceso a capacitación para potenciar tu negocio.
                 </p>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-                    
-                    <div class="col-span-1 lg:col-span-1 bg-white dark:bg-white p-6 rounded-xl shadow-md flex flex-col justify-between border-t-4 border-secondary">
-                        
-                        <div class="mb-4">
-                            <p class="text-sm font-medium text-text-muted-light">Mi Nivel Actual</p>
-                            <h2 class="text-4xl font-extrabold text-primary my-2 flex items-center justify-center">
-                                {{ nivel_actual }} 
-                                <span class="material-symbols-outlined text-4xl ml-2 text-secondary">workspace_premium</span>
-                            </h2>
-                            <p class="text-lg font-bold text-text-light dark:text-text-dark">
-                                {{ puntos_actuales|default:0 }} Puntos
-                            </p>
-                        </div>
-                        
-                        <button class="px-5 py-2 bg-secondary text-white text-sm font-bold rounded-lg hover:bg-secondary/90 transition-colors">
-                            Ver catálogo de premios
-                        </button>
-                    </div>
-
-                    <div class="col-span-1 lg:col-span-2 bg-white dark:bg-white p-6 rounded-xl shadow-md flex flex-col justify-center">
-                        
-                        <p class="text-base font-bold text-text-light dark:text-text-dark mb-1">
-                            Progreso a Nivel: <span class="text-primary">{{ proximo_nivel }}</span>
-                        </p>
-
-                        <div class="mb-4 pt-2">
-                            <div class="flex justify-between items-center mb-2">
-                                <p class="text-2xl font-bold text-secondary">{{ progreso_porcentaje }}% completado</p>
-                                <p class="text-sm font-bold text-text-muted-light">Meta: <span class="text-text-light dark:text-text-dark">{{ puntos_siguiente_nivel }}</span> Ptos.</p>
-                            </div>
-                            
-                            
-                        </div>
-                        
-                        <p class="text-base text-text-muted-light dark:text-text-dark">
-                            Te faltan <span class="font-extrabold text-secondary">{{ puntos_restantes }}</span> puntos para desbloquear el siguiente nivel y sus beneficios exclusivos. ¡Sigue sumando!
-                        </p>
-                    </div>
-                </div>
-
+                {# ELIMINADO: Contenedor completo de estatus y progreso de puntos/niveles #}
+                
                 <h2 class="text-2xl font-bold text-text-light dark:text-text-dark mt-10 mb-6">Todos los Beneficios</h2>
                 
                 <form method="get" action="{% url 'beneficios' %}" id="filter-form" class="flex flex-wrap justify-start gap-4 mb-6">
@@ -170,8 +117,7 @@
                             class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-text-muted-light focus:ring-primary focus:border-primary">
                         <option value="-fecha_creacion" {% if current_sort == '-fecha_creacion' %}selected{% endif %}>Ordenar por: Más Nuevos</option>
                         <option value="vence" {% if current_sort == 'vence' %}selected{% endif %}>Ordenar por: Vencimiento Próximo</option>
-                        <option value="puntos_requeridos" {% if current_sort == 'puntos_requeridos' %}selected{% endif %}>Ordenar por: Puntos (Menor a Mayor)</option>
-                        <option value="-puntos_requeridos" {% if current_sort == '-puntos_requeridos' %}selected{% endif %}>Ordenar por: Puntos (Mayor a Menor)</option>
+                        {# ELIMINADO: Opciones de ordenar por puntos #}
                     </select>
                 </form>
                 
@@ -201,9 +147,7 @@
                                 <span class="absolute top-0 left-0 bg-primary text-white text-xs font-bold px-3 py-1 rounded-br-lg uppercase">
                                     {{ beneficio.get_categoria_display }}
                                 </span>
-                                <span class="absolute top-0 right-0 bg-secondary text-white text-sm font-bold px-3 py-1 rounded-bl-lg">
-                                    {{ beneficio.puntos_requeridos }} Ptos.
-                                </span>
+                                {# ELIMINADO: Display de puntos requeridos #}
                             </div>
                             
                             <div class="p-4 flex-1 flex flex-col">

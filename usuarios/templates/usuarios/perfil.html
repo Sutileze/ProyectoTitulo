@@ -103,24 +103,6 @@
                             
                             <div class="space-y-4">
                                 
-                                <div class="p-4 rounded-lg bg-primary text-white shadow-xl flex flex-col items-center my-6">
-                                    <p class="text-sm font-medium text-gray-200 uppercase tracking-wider">Puntos y Nivel</p>
-                                    
-                                    <div class="flex items-center gap-4 my-2">
-                                        <p class="text-5xl font-extrabold">{{ puntos_actuales|default:0 }}</p>
-                                        <div class="flex flex-col text-left">
-                                            <p class="text-xl font-bold text-secondary">{{ nivel_actual }}</p>
-                                            <p class="text-xs text-gray-200">Nivel</p>
-                                        </div>
-                                    </div>
-
-                                    {% if nivel_actual != 'Diamante' %}
-                                    <div class="w-full h-1 bg-gray-200/50 rounded-full my-2">
-
-                                    </div>
-        
-                                    {% endif %}
-                                </div>
                                 <div class="border-t pt-4">
                                     <div class="flex justify-between items-center mb-4">
                                         <h3 class="text-lg font-bold text-text-light dark:text-text-dark">Datos Personales</h3>

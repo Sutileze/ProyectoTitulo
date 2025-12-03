@@ -45,7 +45,7 @@ INTERESTS_CHOICES = [
     ('SEGUROS', 'Seguros para Negocios'),
 ]
 
-# Categorías para publicaciones del foro
+# ----------------Categorías para publicaciones del foro
 CATEGORIA_POST_CHOICES = [
     ('DUDA', 'Duda / Pregunta'),
     ('OPINION', 'Opinión / Debate'),
@@ -54,7 +54,7 @@ CATEGORIA_POST_CHOICES = [
     ('GENERAL', 'General'),
 ]
 
-# Categorías para beneficios
+# ----------------------------Categorías para beneficios
 CATEGORIAS = [
     ('DESCUENTO', 'Descuento y Ofertas'),
     ('SORTEO', 'Sorteos y Rifas'),
@@ -69,14 +69,6 @@ ESTADO_BENEFICIO = [
     ('BENEFICIO_ACTIVO', 'Beneficio Reclamado'),
 ]
 
-# Niveles del sistema de puntos
-NIVELES = [
-    ('BRONCE', 'Bronce'),
-    ('PLATA', 'Plata'),
-    ('ORO', 'Oro'),
-    ('PLATINO', 'Platino'),
-    ('DIAMANTE', 'Diamante'),
-]
 
 RUBROS_CHOICES = [
     ('ABARROTES', 'Abarrotes'),
@@ -145,15 +137,8 @@ class Comerciante(models.Model):
         help_text="Códigos de intereses separados por coma."
     )
 
-    # Puntos y niveles
-    puntos = models.IntegerField(default=0, verbose_name='Puntos Acumulados')
-    nivel_actual = models.CharField(
-        max_length=50,
-        choices=NIVELES,
-        default='BRONCE',
-        verbose_name='Nivel de Beneficios'
-    )
-
+    # ELIMINADO: puntos y nivel
+    
     es_proveedor = models.BooleanField(default=False, verbose_name='Es Proveedor')
 
     class Meta:
@@ -235,27 +220,7 @@ class Comentario(models.Model):
         return f"Comentario de {self.comerciante.nombre_apellido} en {self.post.titulo[:20]}"
 
 
-class Like(models.Model):
-    post = models.ForeignKey(
-        Post,
-        on_delete=models.CASCADE,
-        related_name='likes',
-        verbose_name='Publicación'
-    )
-    comerciante = models.ForeignKey(
-        Comerciante,
-        on_delete=models.CASCADE,
-        related_name='likes_dados',
-        verbose_name='Comerciante'
-    )
-
-    class Meta:
-        unique_together = ('post', 'comerciante')
-        verbose_name = 'Like'
-        verbose_name_plural = 'Likes'
-
-    def __str__(self):
-        return f"Like de {self.comerciante.nombre_apellido} a {self.post.titulo[:20]}"
+# ELIMINADO: Modelo Like
 
 
 class Beneficio(models.Model):
@@ -274,7 +239,7 @@ class Beneficio(models.Model):
         default='DESCUENTO',
         verbose_name="Categoría"
     )
-    puntos_requeridos = models.IntegerField(default=0, verbose_name="Puntos Requeridos")
+    # ELIMINADO: puntos_requeridos
     estado = models.CharField(
         max_length=30,
         choices=ESTADO_BENEFICIO,

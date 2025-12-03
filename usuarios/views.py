@@ -8,19 +8,20 @@ from django.db.models import Count, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 import feedparser 
+from django.utils.html import strip_tags # Necesaria para fetch_news_preview
+# ELIMINADO: from proveedor.models import Region, Comuna
 
 from .models import (
     Comerciante,
     Post,
-    Like,
+    # ELIMINADO: Like, NIVELES
     Comentario,
     INTERESTS_CHOICES,
-    Beneficio,
-    NIVELES,
-    CATEGORIAS,
     Proveedor,
     Propuesta,
     RUBROS_CHOICES,
+    Beneficio, # MANTENIDO: para la vista de beneficios
+    CATEGORIAS, # MANTENIDO: para la vista de beneficios
 )
 from .forms import (
     RegistroComercianteForm,
@@ -46,41 +47,7 @@ ROLES = {
 
 # --- Funciones helper ---
 
-def calcular_nivel_y_progreso(puntos):
-    NIVELES_VALORES = [nivel[0] for nivel in NIVELES]
-    UMBRAL_PUNTOS = 100
-    MAX_NIVEL_INDEX = len(NIVELES_VALORES) - 1
-
-    nivel_index = min(MAX_NIVEL_INDEX, puntos // UMBRAL_PUNTOS)
-    nivel_actual_codigo = NIVELES_VALORES[nivel_index]
-    current_threshold = nivel_index * UMBRAL_PUNTOS
-
-    if nivel_actual_codigo == 'DIAMANTE':
-        progreso_porcentaje = 100
-        puntos_restantes = 0
-        puntos_siguiente_nivel = puntos
-        proximo_nivel_display = 'Máximo'
-    else:
-        next_threshold = (nivel_index + 1) * UMBRAL_PUNTOS
-        puntos_en_nivel = puntos - current_threshold
-        puntos_a_avanzar = UMBRAL_PUNTOS
-
-        puntos_restantes = next_threshold - puntos
-        progreso_porcentaje = int((puntos_en_nivel / puntos_a_avanzar) * 100)
-        puntos_siguiente_nivel = next_threshold
-        proximo_nivel_display = dict(NIVELES).get(
-            NIVELES_VALORES[nivel_index + 1],
-            'N/A'
-        )
-
-    return {
-        'nivel_codigo': nivel_actual_codigo,
-        'puntos_restantes': puntos_restantes,
-        'puntos_siguiente_nivel': puntos_siguiente_nivel,
-        'progreso_porcentaje': progreso_porcentaje,
-        'proximo_nivel': proximo_nivel_display,
-    }
-
+# ELIMINADO: def calcular_nivel_y_progreso(puntos):
 
 def is_online(last_login):
     if not last_login:
@@ -108,8 +75,7 @@ def registro_view(request):
             if comuna_final:
                 nuevo_comerciante.comuna = comuna_final
 
-            nuevo_comerciante.puntos = 0
-            nuevo_comerciante.nivel_actual = 'BRONCE'
+            # ELIMINADO: Inicialización de puntos y nivel
 
             try:
                 nuevo_comerciante.save()
@@ -131,20 +97,6 @@ def registro_view(request):
     return render(request, 'usuarios/cuenta.html', {'form': form})
 
 
-# usuarios/views.py
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.utils import timezone
-from django.contrib.auth.hashers import check_password
-
-from .forms import LoginForm
-from .models import Comerciante
-   # si lo tienes en utils
-
-current_logged_in_user = None  # asegúrate de tener esto definido arriba
-
-
 def login_view(request):
     global current_logged_in_user
     
@@ -158,31 +110,27 @@ def login_view(request):
                 comerciante = Comerciante.objects.get(email=email)
 
                 if check_password(password, comerciante.password_hash):
-                    # Actualizar nivel y última conexión
-                    progreso = calcular_nivel_y_progreso(comerciante.puntos)
-                    comerciante.nivel_actual = progreso['nivel_codigo']
-                    comerciante.ultima_conexion = timezone.now()
-                    comerciante.save(update_fields=['ultima_conexion', 'nivel_actual']) 
                     
-                    # Guardamos en la variable global usada en admin/soporte
+                    # ELIMINADO: Lógica de actualización de nivel/puntos
+                    
+                    comerciante.ultima_conexion = timezone.now()
+                    
+                    # AJUSTADO: guardar sin nivel_actual ni puntos
+                    comerciante.save(update_fields=['ultima_conexion']) 
+                    
                     current_logged_in_user = comerciante
                     
                     messages.success(request, f'¡Bienvenido {comerciante.nombre_apellido}!')
 
-                    # 🔹 1. Si es ADMIN → panel admin
                     if comerciante.rol == 'ADMIN':
                         return redirect('panel_admin')
 
-                    # 🔹 2. Si es TÉCNICO → panel de soporte
                     if comerciante.rol == 'TECNICO':
                         return redirect('soporte:panel_soporte')
 
-
-                    # 🔹 3. Si es proveedor → panel proveedor
                     if getattr(comerciante, 'es_proveedor', False):
                         return redirect('proveedor_dashboard')
 
-                    # 🔹 4. Si no, plataforma normal
                     return redirect('plataforma_comerciante')
 
                 else:
@@ -198,7 +146,6 @@ def login_view(request):
 
     contexto = {'form': form}
     return render(request, 'usuarios/cuenta.html', contexto)
-
 
 
 def logout_view(request):
@@ -222,11 +169,8 @@ def perfil_view(request):
         return redirect('login')
 
     comerciante = current_logged_in_user
-    progreso = calcular_nivel_y_progreso(comerciante.puntos)
-
-    if comerciante.nivel_actual != progreso['nivel_codigo']:
-        comerciante.nivel_actual = progreso['nivel_codigo']
-        comerciante.save(update_fields=['nivel_actual'])
+    
+    # ELIMINADO: Lógica de cálculo y actualización de nivel/puntos
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -324,10 +268,7 @@ def perfil_view(request):
         'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
         'nombre_negocio_display': comerciante.nombre_negocio,
 
-        'puntos_actuales': comerciante.puntos,
-        'nivel_actual': dict(NIVELES).get(comerciante.nivel_actual, 'Desconocido'),
-        'puntos_restantes': progreso['puntos_restantes'],
-        'progreso_porcentaje': progreso['progreso_porcentaje'],
+        # ELIMINADO: puntos/nivel del contexto
         'es_proveedor': comerciante.es_proveedor,
 
         'photo_form': photo_form,
@@ -359,17 +300,21 @@ def plataforma_comerciante_view(request):
         .select_related('comerciante')
         .annotate(
             comentarios_count=Count('comentarios', distinct=True),
-            likes_count=Count('likes', distinct=True),
-            is_liked=Count(
-                'likes',
-                filter=Q(likes__comerciante=current_logged_in_user)
-            )
+            # ELIMINADO: likes_count y is_liked
         )
         .prefetch_related(
             'comentarios',
             'comentarios__comerciante'
         )
     )
+
+    # Lógica de filtrado de Administrador
+    tipo_filtro = request.GET.get('tipo_filtro', 'COMUNIDAD')
+    
+    if tipo_filtro == 'ADMIN':
+        posts_query = posts_query.filter(comerciante__rol='ADMIN')
+        
+    # ELIMINADO: Lógica de filtro por comuna/región
 
     categoria_filtros = request.GET.getlist('categoria', [])
 
@@ -381,6 +326,8 @@ def plataforma_comerciante_view(request):
         posts = posts_query.all().order_by('-fecha_publicacion')
         if not categoria_filtros or 'TODAS' in categoria_filtros:
             categoria_filtros = ['TODOS']
+
+    # ELIMINADO: Carga de Comunas/Regiones para el contexto
 
     news_preview = fetch_news_preview() 
     context = {
@@ -395,6 +342,8 @@ def plataforma_comerciante_view(request):
             f'Bienvenido a la plataforma, '
             f'{current_logged_in_user.nombre_apellido.split()[0]}.'
         ),
+        # ELIMINADO: Contexto adicional para el filtro de Comuna/Tipo
+        'tipo_filtro': tipo_filtro,
     }
 
     return render(request, 'usuarios/plataforma_comerciante.html', context)
@@ -454,11 +403,7 @@ def post_detail_view(request, post_id):
         .select_related('comerciante')
         .annotate(
             comentarios_count=Count('comentarios', distinct=True),
-            likes_count=Count('likes', distinct=True),
-            is_liked=Count(
-                'likes',
-                filter=Q(likes__comerciante=current_logged_in_user)
-            )
+            # ELIMINADO: likes_count y is_liked
         ),
         pk=post_id
     )
@@ -501,33 +446,6 @@ def add_comment_view(request, post_id):
 
     return redirect('plataforma_comerciante')
 
-
-def like_post_view(request, post_id):
-    global current_logged_in_user
-
-    if not current_logged_in_user:
-        messages.error(request, 'Debes iniciar sesión para dar like.')
-        return redirect('login')
-
-    post = get_object_or_404(Post, pk=post_id)
-
-    if request.method == 'POST':
-        like, created = Like.objects.get_or_create(
-            post=post,
-            comerciante=current_logged_in_user
-        )
-
-        if not created:
-            like.delete()
-            messages.success(request, 'Dislike registrado.')
-        else:
-            messages.success(request, '¡Like registrado!')
-
-    return redirect('plataforma_comerciante')
-
-
-# --- Beneficios ---
-
 def beneficios_view(request):
     global current_logged_in_user
 
@@ -539,8 +457,11 @@ def beneficios_view(request):
         return redirect('login')
 
     comerciante = current_logged_in_user
-    progreso = calcular_nivel_y_progreso(comerciante.puntos)
 
+    # Se asume que CATEGORIAS se mantiene en models.py
+    # La lista de categorías para el filtro
+    CATEGORIAS_CHOICES = CATEGORIAS 
+    
     category_filter = request.GET.get('category', 'TODOS')
     sort_by = request.GET.get('sort_by', '-fecha_creacion')
 
@@ -549,11 +470,10 @@ def beneficios_view(request):
     if category_filter and category_filter != 'TODOS':
         beneficios_queryset = beneficios_queryset.filter(categoria=category_filter)
 
+    # AJUSTADO: Eliminando opciones de ordenamiento por puntos
     valid_sort_fields = [
         'vence',
         '-vence',
-        'puntos_requeridos',
-        '-puntos_requeridos',
         '-fecha_creacion',
     ]
     if sort_by in valid_sort_fields:
@@ -568,16 +488,10 @@ def beneficios_view(request):
         'comerciante': comerciante,
         'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
 
-        'puntos_actuales': comerciante.puntos,
-        'nivel_actual': dict(NIVELES).get(progreso['nivel_codigo'], 'Bronce'),
-        'puntos_restantes': progreso['puntos_restantes'],
-        'puntos_siguiente_nivel': progreso['puntos_siguiente_nivel'],
-        'progreso_porcentaje': progreso['progreso_porcentaje'],
-        'proximo_nivel': progreso['proximo_nivel'],
 
         'beneficios': beneficios_queryset,
         'no_beneficios_disponibles': no_beneficios_disponibles,
-        'CATEGORIAS': CATEGORIAS,
+        'CATEGORIAS': CATEGORIAS_CHOICES, 
         'current_category': category_filter,
         'current_sort': sort_by,
     }
@@ -588,8 +502,6 @@ def beneficios_view(request):
 # --- Gestión de rol proveedor ---
 
 
-
-
 def proveedor_dashboard_view(request):
     global current_logged_in_user
 
@@ -597,7 +509,7 @@ def proveedor_dashboard_view(request):
         messages.warning(request, 'Acceso denegado. Esta interfaz es solo para Proveedores activos.')
         return redirect('perfil')
     
-    from proveedor.models import Proveedor  # importante: importar del app proveedor
+    from proveedor.models import Proveedor 
 
     try:
         proveedor_qs = Proveedor.objects.get(usuario=current_logged_in_user)
@@ -609,125 +521,13 @@ def proveedor_dashboard_view(request):
         'proveedor': proveedor_qs,
     }
 
-    # 🔴 AQUÍ estaba el problema: nombre de template
     return render(request, 'proveedores/perfil.html', context)
 
 
 # --- Directorio de proveedores ---
 
 def directorio_view(request):
-    # Cargar algunos proveedores de ejemplo (solo en desarrollo)
-    try:
-        p1, _ = Proveedor.objects.get_or_create(
-            nombre='Distribuidora El Sol',
-            defaults={
-                'email_contacto': 'contacto@elsol.cl',
-                'whatsapp_contacto': '+56911110000',
-                'descripcion': (
-                    'Proveedores de frutas y verduras frescas de temporada. '
-                    'Entrega a domicilio.'
-                ),
-                'ultima_conexion': timezone.now() - timedelta(minutes=1),
-            },
-        )
-        p2, _ = Proveedor.objects.get_or_create(
-            nombre='Carnes El Gaucho',
-            defaults={
-                'email_contacto': 'carnes@gaucho.cl',
-                'whatsapp_contacto': '+56922220000',
-                'descripcion': (
-                    'Las mejores carnes de vacuno, cerdo y pollo. '
-                    'Calidad garantizada.'
-                ),
-                'ultima_conexion': timezone.now() - timedelta(minutes=10),
-            },
-        )
-        p3, _ = Proveedor.objects.get_or_create(
-            nombre='Abarrotes Don Pepe',
-            defaults={
-                'email_contacto': 'info@donpepe.cl',
-                'whatsapp_contacto': '+56933330000',
-                'descripcion': (
-                    'Amplio surtido de abarrotes, conservas y productos no perecibles.'
-                ),
-                'ultima_conexion': timezone.now() - timedelta(seconds=30),
-            },
-        )
-        p4, _ = Proveedor.objects.get_or_create(
-            nombre='Panadería La Espiga',
-            defaults={
-                'email_contacto': 'pan@espiga.cl',
-                'whatsapp_contacto': '+56944440000',
-                'descripcion': (
-                    'Pan fresco, pasteles y bollería artesanal. Despacho diario.'
-                ),
-                'ultima_conexion': timezone.now() - timedelta(hours=2),
-            },
-        )
-        p5, _ = Proveedor.objects.get_or_create(
-            nombre='Limpieza Total',
-            defaults={
-                'email_contacto': 'limpieza@total.cl',
-                'whatsapp_contacto': '+56955550000',
-                'descripcion': (
-                    'Productos de limpieza industrial y para el hogar. '
-                    'Precios mayoristas.'
-                ),
-                'ultima_conexion': timezone.now() - timedelta(minutes=2),
-            },
-        )
-        p6, _ = Proveedor.objects.get_or_create(
-            nombre='Lácteos del Sur',
-            defaults={
-                'email_contacto': 'lacteos@sur.cl',
-                'whatsapp_contacto': '+56966660000',
-                'descripcion': (
-                    'Leche, quesos, yogures y más. Directo del productor.'
-                ),
-                'ultima_conexion': timezone.now() - timedelta(minutes=1),
-            },
-        )
-
-        if not Propuesta.objects.exists():
-            Propuesta.objects.create(
-                proveedor=p1,
-                titulo='Distribuimos frutas y verduras',
-                rubros_ofertados='Frutas y Verduras, Vegetales',
-                zona_geografica='Santiago Centro',
-            )
-            Propuesta.objects.create(
-                proveedor=p2,
-                titulo='Carnes de alta calidad',
-                rubros_ofertados='Carnes, Pollo, Pavo',
-                zona_geografica='Providencia',
-            )
-            Propuesta.objects.create(
-                proveedor=p3,
-                titulo='Amplia variedad de abarrotes',
-                rubros_ofertados='Abarrotes, Dulces',
-                zona_geografica='Ñuñoa',
-            )
-            Propuesta.objects.create(
-                proveedor=p4,
-                titulo='Servicio de panadería diario',
-                rubros_ofertados='Panadería, Pastelería',
-                zona_geografica='La Reina',
-            )
-            Propuesta.objects.create(
-                proveedor=p5,
-                titulo='Insumos de limpieza mayorista',
-                rubros_ofertados='Limpieza, Detergentes',
-                zona_geografica='Las Condes',
-            )
-            Propuesta.objects.create(
-                proveedor=p6,
-                titulo='Venta directa de lácteos',
-                rubros_ofertados='Lácteos, Quesos',
-                zona_geografica='Maipú',
-            )
-    except Exception:
-        pass
-
+    
     rubro_filter = request.GET.get('rubro', 'TODOS')
     zona_filter = request.GET.get('zona', 'TODOS')
     sort_by = request.GET.get('ordenar_por', 'proveedor__nombre')
@@ -796,19 +596,15 @@ def proveedor_perfil_view(request, pk):
 
     return render(request, 'usuarios/proveedor_perfil.html', context)
 
-# al inicio del archivo ya debes tener:
-from django.contrib import messages
+# Se asume que el usuario tiene la línea de importación correcta
 from soporte.forms import TicketSoporteForm
-
-# ...
+from django.utils.html import strip_tags
 
 def crear_ticket_soporte(request):
     """
     Vista para que un COMERCIANTE cree un ticket de soporte.
     Usa current_logged_in_user (no Django auth).
     """
-    from .views import current_logged_in_user  # si ya estás en este archivo, NO repitas esto
-
     comerciante = current_logged_in_user
     if not comerciante:
         messages.error(request, "Debes iniciar sesión para crear un ticket de soporte.")

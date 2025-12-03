@@ -13,7 +13,6 @@ urlpatterns = [
     path('publicar/', views.publicar_post_view, name='publicar_post'),
     path('post/<int:post_id>/', views.post_detail_view, name='post_detail'),
     path('post/<int:post_id>/comentario/', views.add_comment_view, name='add_comment'),
-    path('post/<int:post_id>/like/', views.like_post_view, name='like_post'),
         # PLATFORM/FORUM
     path('plataforma/', views.plataforma_comerciante_view, name='plataforma_comerciante'),
     path('publicar/', views.publicar_post_view, name='crear_publicacion'),

@@ -1,8 +1,8 @@
-# usuarios/forms.py (CONTENIDO COMPLETO MODIFICADO)
+# usuarios/forms.py (CONTENIDO COMPLETO)
 
 from django import forms
 from .models import (
-    Comerciante, Post, Comentario, Like, 
+    Comerciante, Post, Comentario, 
     RELACION_NEGOCIO_CHOICES, TIPO_NEGOCIO_CHOICES, 
     CATEGORIA_POST_CHOICES, INTERESTS_CHOICES
 ) 

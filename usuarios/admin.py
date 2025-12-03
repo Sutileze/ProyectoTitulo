@@ -3,7 +3,6 @@ from .models import (
     Comerciante,
     Post,
     Comentario,
-    Like,
     Beneficio,
     Proveedor,
     Propuesta,
@@ -18,8 +17,6 @@ class ComercianteAdmin(admin.ModelAdmin):
         'rol',
         'comuna',
         'nombre_negocio',
-        'puntos',
-        'nivel_actual',
         'es_proveedor',
         'fecha_registro',
         'ultima_conexion',
@@ -27,13 +24,12 @@ class ComercianteAdmin(admin.ModelAdmin):
     list_filter = (
         'rol',
         'comuna',
-        'nivel_actual',
         'es_proveedor',
         'relacion_negocio',
         'tipo_negocio',
     )
     search_fields = ('nombre_apellido', 'email', 'nombre_negocio', 'comuna')
-    readonly_fields = ('fecha_registro', 'ultima_conexion', 'puntos', 'nivel_actual')
+    readonly_fields = ('fecha_registro', 'ultima_conexion')
 
 
 @admin.register(Post)
@@ -50,10 +46,6 @@ class ComentarioAdmin(admin.ModelAdmin):
     search_fields = ('contenido', 'comerciante__nombre_apellido', 'post__titulo')
 
 
-@admin.register(Like)
-class LikeAdmin(admin.ModelAdmin):
-    list_display = ('post', 'comerciante')
-    search_fields = ('post__titulo', 'comerciante__nombre_apellido')
 
 
 @admin.register(Beneficio)
@@ -61,7 +53,6 @@ class BeneficioAdmin(admin.ModelAdmin):
     list_display = (
         'titulo',
         'categoria',
-        'puntos_requeridos',
         'estado',
         'vence',
         'fecha_creacion',

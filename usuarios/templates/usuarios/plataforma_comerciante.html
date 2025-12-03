@@ -211,17 +211,7 @@
                                                 
                                                 <div class="flex items-center text-text-muted-light dark:text-text-muted-dark text-sm mt-3">
                                                     
-                                                    <form method="POST" action="{% url 'like_post' post_id=post.id %}" class="inline">
-                                                        {% csrf_token %}
-                                                        <button type="submit"
-                                                                class="flex items-center mr-6 hover:text-red-500 transition-colors">
-                                                            <span class="material-symbols-outlined text-base mr-1 
-                                                                {% if post.is_liked %} text-red-500 {% else %} text-gray-500 {% endif %}">
-                                                                favorite
-                                                            </span>
-                                                            <span class="likes-count">{{ post.likes_count }}</span>
-                                                        </button>
-                                                    </form>
+                        
                                                     
                                                     <button onclick="toggleComments('{{ post.id }}')" 
                                                             class="flex items-center mr-4 hover:text-primary transition-colors">
