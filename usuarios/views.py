@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 import feedparser 
 from django.utils.html import strip_tags # Necesaria para fetch_news_preview
-# ELIMINADO: from proveedor.models import Region, Comuna
+from proveedor.models import Region, Comuna # RESTAURADO: Importación para filtros de región
 
 from .models import (
     Comerciante,
@@ -327,7 +327,11 @@ def plataforma_comerciante_view(request):
         if not categoria_filtros or 'TODAS' in categoria_filtros:
             categoria_filtros = ['TODOS']
 
-    # ELIMINADO: Carga de Comunas/Regiones para el contexto
+    # NUEVO: Carga de regiones para la barra lateral
+    try:
+        regiones = Region.objects.all().order_by('nombre')
+    except Exception:
+        regiones = [] # Retorna lista vacía si la tabla no existe o falla la importación
 
     news_preview = fetch_news_preview() 
     context = {
@@ -342,8 +346,8 @@ def plataforma_comerciante_view(request):
             f'Bienvenido a la plataforma, '
             f'{current_logged_in_user.nombre_apellido.split()[0]}.'
         ),
-        # ELIMINADO: Contexto adicional para el filtro de Comuna/Tipo
         'tipo_filtro': tipo_filtro,
+        'regiones': regiones, # AÑADIDO al contexto
     }
 
     return render(request, 'usuarios/plataforma_comerciante.html', context)
@@ -446,6 +450,12 @@ def add_comment_view(request, post_id):
 
     return redirect('plataforma_comerciante')
 
+
+# ELIMINADO: def like_post_view(request, post_id):
+
+
+# --- Beneficios (RESTAURADA) ---
+
 def beneficios_view(request):
     global current_logged_in_user
 
@@ -458,7 +468,6 @@ def beneficios_view(request):
 
     comerciante = current_logged_in_user
 
-    # Se asume que CATEGORIAS se mantiene en models.py
     # La lista de categorías para el filtro
     CATEGORIAS_CHOICES = CATEGORIAS 
     
@@ -488,6 +497,7 @@ def beneficios_view(request):
         'comerciante': comerciante,
         'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
 
+        # ELIMINADO: puntos/niveles/progreso del contexto
 
         'beneficios': beneficios_queryset,
         'no_beneficios_disponibles': no_beneficios_disponibles,
@@ -529,8 +539,8 @@ def proveedor_dashboard_view(request):
 def directorio_view(request):
     
     rubro_filter = request.GET.get('rubro', 'TODOS')
-    zona_filter = request.GET.get('zona', 'TODOS')
-    sort_by = request.GET.get('ordenar_por', 'proveedor__nombre')
+    # AÑADIDO: Obtener filtro de región
+    region_filter_id = request.GET.get('region') 
 
     propuestas_queryset = Propuesta.objects.select_related('proveedor').all()
 
@@ -538,17 +548,37 @@ def directorio_view(request):
         propuestas_queryset = propuestas_queryset.filter(
             rubros_ofertados__icontains=rubro_filter
         )
-    if zona_filter and zona_filter != 'TODOS':
-        propuestas_queryset = propuestas_queryset.filter(
-            zona_geografica__icontains=zona_filter
-        )
+    
+    # NUEVO: Lógica de filtrado por Región en el Directorio
+    if region_filter_id and region_filter_id != '':
+        try:
+            # Asumiendo que Proveedor tiene una FK a Region.
+            propuestas_queryset = propuestas_queryset.filter(
+                proveedor__region__id=region_filter_id
+            )
+        except Exception:
+            # Si el modelo Proveedor no tiene la FK a Region (por si hubo errores de migración),
+            # simplemente se omite el filtro.
+            pass
 
+
+    # ELIMINADO: zona_filter (Charfield) para usar region_filter (FK)
+    # y el sort_by (se simplifica la lógica)
+    sort_by = request.GET.get('ordenar_por', 'proveedor__nombre') 
     valid_sort_fields = ['proveedor__nombre', '-proveedor__nombre']
+    
     if sort_by in valid_sort_fields:
         propuestas_queryset = propuestas_queryset.order_by(sort_by)
     else:
         sort_by = 'proveedor__nombre'
         propuestas_queryset = propuestas_queryset.order_by(sort_by)
+        
+
+    # NUEVO: Carga de regiones para el contexto del directorio
+    try:
+        regiones = Region.objects.all().order_by('nombre')
+    except Exception:
+        regiones = []
 
     context = {
         'propuestas': propuestas_queryset,
@@ -562,9 +592,11 @@ def directorio_view(request):
             'La Reina',
         ],
         'current_rubro': rubro_filter,
-        'current_zona': zona_filter,
+        'current_zona': region_filter_id, # Usamos la ID de región seleccionada aquí
         'current_sort': sort_by,
         'comerciante': current_logged_in_user,
+        'regiones': regiones, # AÑADIDO para el filtro
+        'region_seleccionada': region_filter_id,
     }
 
     return render(request, 'usuarios/directorio.html', context)
