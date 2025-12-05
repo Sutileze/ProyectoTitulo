@@ -1,0 +1,273 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completar Registro - Club Almacén</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1193d4',
+                        'primary-dark': '#0d6ea8',
+                    },
+                    fontFamily: {
+                        sans: ['Work Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="font-sans bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen">
+    
+    <!-- Decoración de fondo -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+    </div>
+    
+    <div class="relative min-h-screen flex items-center justify-center p-4 py-12">
+        <div class="w-full max-w-2xl animate-fade-in-up">
+            <div class="glass-effect rounded-2xl shadow-2xl p-8 lg:p-12">
+                
+                <!-- Header con logo del proveedor -->
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-4">
+                        {% if account.provider == 'google' %}
+                            <svg class="w-12 h-12" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                        {% elif account.provider == 'facebook' %}
+                            <svg class="w-12 h-12 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        {% endif %}
+                    </div>
+                    
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                        ¡Un paso más!
+                    </h1>
+                    <p class="text-gray-600 text-lg">
+                        Completa tu información para continuar
+                    </p>
+                </div>
+
+                <!-- Información del usuario -->
+                <div class="bg-blue-50 border-l-4 border-primary p-4 mb-6 rounded-r-lg">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-2xl">info</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">Conectando con {{ account.provider|title }}</p>
+                            <p class="text-sm text-gray-600">{{ account.email }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario -->
+                <form method="POST" action="{% url 'socialaccount_signup' %}" class="space-y-5">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="p-4 rounded-lg bg-red-50 text-red-700 border border-red-200">
+                            {% for error in form.non_field_errors %}
+                                <p class="text-sm">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Nombre y Apellido -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Nombre Completo *
+                        </label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">person</span>
+                            <input 
+                                type="text" 
+                                name="nombre_apellido" 
+                                value="{{ form.nombre_apellido.value|default:'' }}"
+                                required
+                                class="w-full pl-12 pr-4 py-3.5 border-2 {% if form.nombre_apellido.errors %}border-red-500{% else %}border-gray-200{% endif %} rounded-xl focus:border-primary focus:outline-none transition-colors"
+                                placeholder="Juan Pérez"
+                            />
+                        </div>
+                        {% for error in form.nombre_apellido.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- WhatsApp -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Número de WhatsApp *
+                        </label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">phone</span>
+                            <input 
+                                type="tel" 
+                                name="whatsapp" 
+                                value="{{ form.whatsapp.value|default:'' }}"
+                                required
+                                class="w-full pl-12 pr-4 py-3.5 border-2 {% if form.whatsapp.errors %}border-red-500{% else %}border-gray-200{% endif %} rounded-xl focus:border-primary focus:outline-none transition-colors"
+                                placeholder="+56912345678"
+                            />
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Formato: +56912345678</p>
+                        {% for error in form.whatsapp.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Relación con el Negocio -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Relación con el Negocio *
+                        </label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">badge</span>
+                            <select 
+                                name="relacion_negocio"
+                                required
+                                class="w-full pl-12 pr-4 py-3.5 border-2 {% if form.relacion_negocio.errors %}border-red-500{% else %}border-gray-200{% endif %} rounded-xl focus:border-primary focus:outline-none transition-colors appearance-none bg-white cursor-pointer"
+                            >
+                                <option value="">Selecciona una opción</option>
+                                <option value="DUENO">Dueño/a</option>
+                                <option value="SOCIO">Socio/a</option>
+                                <option value="EMPLEADO">Empleado/a</option>
+                                <option value="FAMILIAR">Familiar</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">arrow_drop_down</span>
+                        </div>
+                        {% for error in form.relacion_negocio.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Tipo de Negocio -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Tipo de Negocio *
+                        </label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">store</span>
+                            <select 
+                                name="tipo_negocio"
+                                required
+                                class="w-full pl-12 pr-4 py-3.5 border-2 {% if form.tipo_negocio.errors %}border-red-500{% else %}border-gray-200{% endif %} rounded-xl focus:border-primary focus:outline-none transition-colors appearance-none bg-white cursor-pointer"
+                            >
+                                <option value="">Selecciona un tipo</option>
+                                <option value="ALMACEN">Almacén</option>
+                                <option value="MINIMARKET">Minimarket</option>
+                                <option value="KIOSCO">Kiosco</option>
+                                <option value="BOTILLERIA">Botillería</option>
+                                <option value="OTRO">Otro</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">arrow_drop_down</span>
+                        </div>
+                        {% for error in form.tipo_negocio.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Comuna -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Comuna *
+                        </label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">location_on</span>
+                            <select 
+                                name="comuna_select"
+                                required
+                                class="w-full pl-12 pr-4 py-3.5 border-2 {% if form.comuna_select.errors %}border-red-500{% else %}border-gray-200{% endif %} rounded-xl focus:border-primary focus:outline-none transition-colors appearance-none bg-white cursor-pointer"
+                            >
+                                <option value="">Selecciona tu comuna</option>
+                                <option value="Santiago">Santiago</option>
+                                <option value="Las Condes">Las Condes</option>
+                                <option value="Providencia">Providencia</option>
+                                <option value="Maipú">Maipú</option>
+                                <option value="La Florida">La Florida</option>
+                                <option value="Puente Alto">Puente Alto</option>
+                                <!-- Agregar más comunas -->
+                            </select>
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">arrow_drop_down</span>
+                        </div>
+                        {% for error in form.comuna_select.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Términos y Condiciones -->
+                    <div class="border-t border-gray-200 pt-6">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" required class="mt-1 w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                            <span class="text-sm text-gray-600 group-hover:text-gray-800">
+                                Acepto los <a href="#" class="text-primary font-semibold hover:underline">términos y condiciones</a> y la <a href="#" class="text-primary font-semibold hover:underline">política de privacidad</a> de Club Almacén
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                        <button 
+                            type="submit" 
+                            class="flex-1 bg-gradient-to-r from-primary to-primary-dark text-white font-bold py-4 rounded-xl hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                        >
+                            <span>Completar Registro</span>
+                            <span class="material-symbols-outlined">arrow_forward</span>
+                        </button>
+                        
+                        <a 
+                            href="{% url 'cuenta' %}" 
+                            class="flex-1 sm:flex-initial border-2 border-gray-300 text-gray-700 font-bold py-4 px-6 rounded-xl hover:border-primary hover:text-primary transition-all text-center"
+                        >
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Seguridad -->
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <div class="flex items-center gap-2 justify-center text-sm text-gray-500">
+                        <span class="material-symbols-outlined text-xl">lock</span>
+                        <span>Tu información está protegida y encriptada</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

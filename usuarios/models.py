@@ -311,3 +311,5 @@ class Propuesta(models.Model):
 
     def __str__(self):
         return f"{self.titulo} - {self.proveedor.nombre}"
+    
+    

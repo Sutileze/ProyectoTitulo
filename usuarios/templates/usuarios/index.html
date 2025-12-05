@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Almacén - Asociación de Comerciantes de Chile</title>
+    {% load static %}
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2263c5ff",
+                        "primary-dark": "#1042a1ff",
+                        "secondary": "#FF9800",
+                        "background-light": "#F4F6F8",
+                        "background-dark": "#101c22",
+                        "text-light": "#333333",
+                        "text-dark": "#F4F6F8",
+                        "text-muted-light": "#666666",
+                        "text-muted-dark": "#a0aec0",
+                    },
+                    fontFamily: {
+                        "display": ["Work Sans", "sans-serif"],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-white dark:bg-background-dark font-display">
+    <!-- Header -->
+    <header class="bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 shadow-sm">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <!-- REEMPLAZA ESTE COMENTARIO CON EL LOGO DE TU EMPRESA -->
+                    <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Club Almacén Logo" class="h-12 w-auto"> 
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-4xl">store</span>
+                        <div>
+                            <h1 class="text-2xl font-bold text-primary">Club Almacén</h1>
+                            <p class="text-xs text-text-muted-light dark:text-text-muted-dark">Comerciantes Unidos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Links - Desktop -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#quienes-somos" class="text-text-light dark:text-text-dark hover:text-primary transition-colors font-medium">
+                        Quiénes Somos
+                    </a>
+                    <a href="#beneficios" class="text-text-light dark:text-text-dark hover:text-primary transition-colors font-medium">
+                        Beneficios
+                    </a>
+                    <a href="#contacto" class="text-text-light dark:text-text-dark hover:text-primary transition-colors font-medium">
+                        Contacto
+                    </a>
+                </div>
+
+                <!-- Auth Buttons -->
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'login' %}" class="hidden sm:block px-5 py-2.5 text-primary border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-200 font-semibold">
+                        Iniciar Sesión
+                    </a>
+                    <a href="{% url 'registro' %}" class="px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-all duration-200 font-semibold shadow-md">
+                        Crear Cuenta
+                    </a>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden text-text-light dark:text-text-dark">
+                        <span class="material-symbols-outlined text-3xl">menu</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative bg-gradient-to-br from-primary/5 via-white to-primary/10 dark:from-background-dark dark:via-gray-900 dark:to-primary/10 py-20 lg:py-32">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-8">
+                    <div class="space-y-4">
+                        <h2 class="text-5xl lg:text-6xl font-bold text-text-light dark:text-text-dark leading-tight">
+                            Asociándonos para <span class="text-primary">Modernizar</span> los Almacenes de Chile
+                        </h2>
+                        <p class="text-xl text-text-muted-light dark:text-text-muted-dark leading-relaxed">
+                            Club Almacén es la primera asociación de comerciantes minoristas que se unen para mejorar la calidad de nuestros negocios, de nuestro trabajo y de nuestras vidas.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="{% url 'registro' %}" class="px-8 py-4 bg-primary text-white rounded-lg hover:bg-primary-dark transition-all duration-200 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined">store</span>
+                            Unirme como Comerciante
+                        </a>
+                        <a href="#" class="px-8 py-4 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-all duration-200 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined">local_shipping</span>
+                            Soy Proveedor
+                        </a>
+                    </div>
+
+                    <div class="pt-4">
+                        <a href="/admin/" class="inline-flex items-center gap-2 text-text-muted-light dark:text-text-muted-dark hover:text-primary transition-colors group">
+                            <span class="material-symbols-outlined group-hover:scale-110 transition-transform">admin_panel_settings</span>
+                            <span class="font-semibold">Acceso Administrador</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Hero Image/Illustration -->
+                <div class="relative hidden lg:block">
+                    <div class="bg-gradient-to-br from-primary/20 to-primary/5 rounded-3xl p-8 shadow-2xl">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-2">
+                                <span class="material-symbols-outlined text-primary text-4xl">trending_up</span>
+                                <h4 class="font-bold text-text-light dark:text-text-dark">Crece tu Negocio</h4>
+                                <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Mejores precios y condiciones</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-2">
+                                <span class="material-symbols-outlined text-primary text-4xl">groups</span>
+                                <h4 class="font-bold text-text-light dark:text-text-dark">Comunidad</h4>
+                                <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Red de apoyo mutuo</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-2">
+                                <span class="material-symbols-outlined text-primary text-4xl">school</span>
+                                <h4 class="font-bold text-text-light dark:text-text-dark">Capacitación</h4>
+                                <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Aprende y mejora</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-2">
+                                <span class="material-symbols-outlined text-primary text-4xl">workspace_premium</span>
+                                <h4 class="font-bold text-text-light dark:text-text-dark">Beneficios</h4>
+                                <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Descuentos exclusivos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quiénes Somos Section -->
+    <section id="quienes-somos" class="py-20 bg-white dark:bg-background-dark">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto space-y-6 mb-16">
+                <h3 class="text-4xl lg:text-5xl font-bold text-text-light dark:text-text-dark">
+                    ¿Quiénes Somos?
+                </h3>
+                <p class="text-xl text-text-muted-light dark:text-text-muted-dark leading-relaxed">
+                    Somos comerciantes como tú, que entendemos los desafíos diarios de administrar un almacén o negocio minorista. Juntos, tenemos más fuerza para negociar, más conocimiento para crecer y más apoyo para enfrentar cualquier situación.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-800 dark:to-gray-900 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+                    <div class="bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                        <span class="material-symbols-outlined text-primary text-3xl">handshake</span>
+                    </div>
+                    <h4 class="text-2xl font-bold text-text-light dark:text-text-dark mb-4">Nuestra Misión</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark leading-relaxed">
+                        Empoderar a los comerciantes minoristas de Chile mediante la unión, el conocimiento compartido y el acceso a mejores condiciones comerciales.
+                    </p>
+                </div>
+
+                <div class="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-800 dark:to-gray-900 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+                    <div class="bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                        <span class="material-symbols-outlined text-primary text-3xl">visibility</span>
+                    </div>
+                    <h4 class="text-2xl font-bold text-text-light dark:text-text-dark mb-4">Nuestra Visión</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark leading-relaxed">
+                        Ser la asociación líder que moderniza y profesionaliza el comercio minorista, creando oportunidades sustentables para todos nuestros miembros.
+                    </p>
+                </div>
+
+                <div class="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-800 dark:to-gray-900 p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
+                    <div class="bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                        <span class="material-symbols-outlined text-primary text-3xl">favorite</span>
+                    </div>
+                    <h4 class="text-2xl font-bold text-text-light dark:text-text-dark mb-4">Nuestros Valores</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark leading-relaxed">
+                        Solidaridad, transparencia, colaboración y compromiso con el crecimiento de cada uno de nuestros asociados y sus comunidades.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Beneficios Section -->
+    <section id="beneficios" class="py-20 bg-background-light dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h3 class="text-4xl lg:text-5xl font-bold text-text-light dark:text-text-dark mb-4">
+                    Beneficios de Asociarse
+                </h3>
+                <p class="text-xl text-text-muted-light dark:text-text-muted-dark max-w-2xl mx-auto">
+                    Descubre todo lo que Club Almacén tiene para ofrecer a tu negocio
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-1">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4 block">savings</span>
+                    <h4 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">Mejores Precios</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark">Negociaciones grupales con proveedores para obtener descuentos especiales</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-1">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4 block">support_agent</span>
+                    <h4 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">Asesoría Profesional</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark">Apoyo en gestión, contabilidad y aspectos legales de tu negocio</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-1">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4 block">school</span>
+                    <h4 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">Capacitaciones</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark">Talleres y cursos para mejorar tus habilidades comerciales</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-1">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4 block">forum</span>
+                    <h4 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">Comunidad</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark">Red de comerciantes para compartir experiencias y soluciones</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-1">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4 block">campaign</span>
+                    <h4 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">Marketing</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark">Herramientas y estrategias para promocionar tu negocio</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-1">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4 block">computer</span>
+                    <h4 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">Tecnología</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark">Acceso a plataformas digitales para modernizar tu almacén</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-1">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4 block">gavel</span>
+                    <h4 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">Defensa Gremial</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark">Representación ante autoridades y defensa de intereses comunes</p>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg transition-all hover:-translate-y-1">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4 block">stars</span>
+                    <h4 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">Convenios</h4>
+                    <p class="text-text-muted-light dark:text-text-muted-dark">Descuentos en servicios bancarios, seguros y más</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-primary to-primary-dark">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
+            <h3 class="text-4xl lg:text-5xl font-bold text-white">
+                ¿Listo para Transformar tu Negocio?
+            </h3>
+            <p class="text-xl text-white/90 max-w-2xl mx-auto">
+                Únete a cientos de comerciantes que ya están creciendo con Club Almacén
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{% url 'registro' %}" class="px-8 py-4 bg-white text-primary rounded-lg hover:bg-gray-100 transition-all duration-200 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    Crear Cuenta Gratis
+                </a>
+                <a href="#quienes-somos" class="px-8 py-4 bg-transparent border-2 border-white text-white rounded-lg hover:bg-white hover:text-primary transition-all duration-200 font-bold text-lg">
+                    Conocer Más
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-3xl">store</span>
+                        <h4 class="text-xl font-bold">Club Almacén</h4>
+                    </div>
+                    <p class="text-gray-400">Comerciantes unidos para un futuro mejor</p>
+                </div>
+
+                <div>
+                    <h5 class="font-bold mb-4">Enlaces Rápidos</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-primary transition-colors">Inicio</a></li>
+                        <li><a href="#quienes-somos" class="hover:text-primary transition-colors">Quiénes Somos</a></li>
+                        <li><a href="#beneficios" class="hover:text-primary transition-colors">Beneficios</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Contacto</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h5 class="font-bold mb-4">Accesos</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-primary transition-colors">Portal Comerciante</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Portal Proveedor</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Administración</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h5 class="font-bold mb-4">Contacto</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">mail</span>
+                            contacto@clubalmacen.cl
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">phone</span>
+                            +56 2 1234 5678
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">location_on</span>
+                            Santiago, Chile
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 pt-8 text-center text-gray-400">
+                <p>&copy; 2025 Club Almacén. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

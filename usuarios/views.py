@@ -58,7 +58,7 @@ def is_online(last_login):
 # --- Autenticación y cuenta ---
 
 def index(request):
-    return redirect('registro')
+    return render(request, 'usuarios/index.html')
 
 
 def registro_view(request):
@@ -755,3 +755,6 @@ def fetch_news_preview():
     except Exception:
         # En caso de fallo, retorna una lista vacía para que el template use el fallback
         return []
+    
+
+    

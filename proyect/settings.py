@@ -36,10 +36,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'usuarios',
     'proveedor',
     'administrador',
     'soporte',
+
+    # Allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.facebook',
+
+    'proyect'
 
 ]
 
@@ -52,7 +62,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "django.middleware.csrf.CsrfViewMiddleware",
+    'allauth.account.middleware.AccountMiddleware',
 ]
+
+SITE_ID = 1
 
 ROOT_URLCONF = 'proyect.urls'
 
@@ -140,3 +153,64 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_PROFILE_IMAGE = 'usuarios/img/default_profile.png'
 
 LOGIN_URL = '/login/'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Configuración de Allauth
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': 'TU_GOOGLE_CLIENT_ID',
+            'secret': 'TU_GOOGLE_SECRET',
+            'key': ''
+        }
+    },
+    'facebook': {
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
+        'INIT_PARAMS': {'cookie': True},
+        'FIELDS': [
+            'id',
+            'email',
+            'name',
+            'first_name',
+            'last_name',
+            'verified',
+        ],
+        'EXCHANGE_TOKEN': True,
+        'VERIFIED_EMAIL': False,
+        'VERSION': 'v13.0',
+        'APP': {
+            'client_id': 'TU_FACEBOOK_APP_ID',
+            'secret': 'TU_FACEBOOK_SECRET',
+            'key': ''
+        }
+    }
+}
+
+
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_USERNAME_REQUIRED = False
+SOCIALACCOUNT_AUTO_SIGNUP = True
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+
+LOGIN_REDIRECT_URL = '/registro/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+
+
+SOCIALACCOUNT_ADAPTER = 'proyect.adapters.MySocialAccountAdapter'

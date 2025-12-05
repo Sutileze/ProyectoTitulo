@@ -1,5 +1,5 @@
 # usuarios/forms.py (CONTENIDO COMPLETO)
-
+from allauth.socialaccount.forms import SignupForm
 from django import forms
 from .models import (
     Comerciante, Post, Comentario, 
@@ -208,3 +208,86 @@ class ComentarioForm(forms.ModelForm):
         labels = {
             'contenido': 'Tu Comentario'
         }
+
+
+class SocialSignupForm(SignupForm):
+    nombre_apellido = forms.CharField(
+        max_length=100,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Juan Pérez',
+            'class': 'w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none'
+        })
+    )
+    
+    whatsapp = forms.CharField(
+        max_length=12,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'placeholder': '+56912345678',
+            'class': 'w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none'
+        })
+    )
+    
+    relacion_negocio = forms.ChoiceField(
+        choices=[
+            ('', 'Selecciona una opción'),
+            ('DUENO', 'Dueño/a'),
+            ('SOCIO', 'Socio/a'),
+            ('EMPLEADO', 'Empleado/a'),
+            ('FAMILIAR', 'Familiar'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none appearance-none bg-white'
+        })
+    )
+    
+    tipo_negocio = forms.ChoiceField(
+        choices=[
+            ('', 'Selecciona un tipo'),
+            ('ALMACEN', 'Almacén'),
+            ('MINIMARKET', 'Minimarket'),
+            ('KIOSCO', 'Kiosco'),
+            ('BOTILLERIA', 'Botillería'),
+            ('OTRO', 'Otro'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none appearance-none bg-white'
+        })
+    )
+    
+    comuna_select = forms.ChoiceField(
+        choices=[
+            ('', 'Selecciona tu comuna'),
+            ('Santiago', 'Santiago'),
+            ('Las Condes', 'Las Condes'),
+            ('Providencia', 'Providencia'),
+            ('Maipú', 'Maipú'),
+            ('La Florida', 'La Florida'),
+            ('Puente Alto', 'Puente Alto'),
+            # Agregar más comunas
+        ],
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none appearance-none bg-white'
+        })
+    )
+
+    def save(self, request):
+        user = super().save(request)
+        
+        # Crear o actualizar el comerciante
+        comerciante, created = Comerciante.objects.get_or_create(
+            email=user.email,
+            defaults={
+                'nombre_apellido': self.cleaned_data['nombre_apellido'],
+                'whatsapp': self.cleaned_data['whatsapp'],
+                'relacion_negocio': self.cleaned_data['relacion_negocio'],
+                'tipo_negocio': self.cleaned_data['tipo_negocio'],
+                'comuna': self.cleaned_data['comuna_select'],
+            }
+        )
+        
+        return user
