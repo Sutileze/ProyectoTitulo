@@ -45,13 +45,18 @@ INTERESTS_CHOICES = [
     ('SEGUROS', 'Seguros para Negocios'),
 ]
 
-# ----------------Categorías para publicaciones del foro
+# ----------------Categorías para publicaciones del foro (INCLUYE TODAS)
 CATEGORIA_POST_CHOICES = [
     ('DUDA', 'Duda / Pregunta'),
     ('OPINION', 'Opinión / Debate'),
     ('RECOMENDACION', 'Recomendación'),
     ('NOTICIA', 'Noticia del Sector'),
     ('GENERAL', 'General'),
+    # NUEVAS CATEGORÍAS DE ADMINISTRADOR
+    ('NOTICIAS_CA', 'Noticias Club Almacén'),
+    ('DESPACHOS', 'Despachos realizados'),
+    ('NUEVOS_SOCIOS', 'Nuevos socios'),
+    ('ACTIVIDADES', 'Actividades en curso'),
 ]
 
 # ----------------------------Categorías para beneficios
@@ -311,5 +316,3 @@ class Propuesta(models.Model):
 
     def __str__(self):
         return f"{self.titulo} - {self.proveedor.nombre}"
-    
-    

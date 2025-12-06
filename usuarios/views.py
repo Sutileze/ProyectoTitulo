@@ -22,6 +22,7 @@ from .models import (
     RUBROS_CHOICES,
     Beneficio, # MANTENIDO: para la vista de beneficios
     CATEGORIAS, # MANTENIDO: para la vista de beneficios
+    CATEGORIA_POST_CHOICES, # Importado para obtener todas
 )
 from .forms import (
     RegistroComercianteForm,
@@ -44,6 +45,22 @@ ROLES = {
     'INVITADO': 'Invitado',
 }
 
+# --- DEFINICIÓN DE CATEGORÍAS SEPARADAS ---
+COMMUNITY_CATEGORIES = [
+    ('DUDA', 'Duda / Pregunta'),
+    ('OPINION', 'Opinión / Debate'),
+    ('RECOMENDACION', 'Recomendación'),
+    ('NOTICIA', 'Noticia del Sector'),
+    ('GENERAL', 'General'),
+]
+
+ADMIN_CATEGORIES = [
+    ('NOTICIAS_CA', 'Noticias Club Almacén'),
+    ('DESPACHOS', 'Despachos realizados'),
+    ('NUEVOS_SOCIOS', 'Nuevos socios'),
+    ('ACTIVIDADES', 'Actividades en curso'),
+]
+
 
 # --- Funciones helper ---
 
@@ -58,7 +75,7 @@ def is_online(last_login):
 # --- Autenticación y cuenta ---
 
 def index(request):
-    return render(request, 'usuarios/index.html')
+    return redirect('registro')
 
 
 def registro_view(request):
@@ -294,7 +311,6 @@ def plataforma_comerciante_view(request):
             'Por favor, inicia sesión para acceder a la plataforma.'
         )
         return redirect('login')
-
     posts_query = (
         Post.objects
         .select_related('comerciante')
@@ -311,21 +327,37 @@ def plataforma_comerciante_view(request):
     # Lógica de filtrado de Administrador
     tipo_filtro = request.GET.get('tipo_filtro', 'COMUNIDAD')
     
+    # 1. Definir opciones de categorías válidas según el filtro principal
     if tipo_filtro == 'ADMIN':
         posts_query = posts_query.filter(comerciante__rol='ADMIN')
-        
-    # ELIMINADO: Lógica de filtro por comuna/región
+        category_options = ADMIN_CATEGORIES
+    else: # 'COMUNIDAD'
+        community_keys = [key for key, value in COMMUNITY_CATEGORIES]
+        posts_query = posts_query.filter(categoria__in=community_keys)
+        category_options = COMMUNITY_CATEGORIES
 
+    # 2. Aplicar filtro de subcategoría (Temas del Foro)
     categoria_filtros = request.GET.getlist('categoria', [])
-
-    if categoria_filtros and 'TODAS' not in categoria_filtros:
+    
+    # Obtener todas las claves válidas para el filtro actual
+    valid_categories_keys = [key for key, value in category_options]
+    
+    if categoria_filtros and 'TODAS' not in categoria_filtros and 'TODOS' not in categoria_filtros:
+        # Si se seleccionan categorías específicas (que no sean 'TODAS')
         posts = posts_query.filter(
             categoria__in=categoria_filtros
         ).order_by('-fecha_publicacion')
     else:
-        posts = posts_query.all().order_by('-fecha_publicacion')
-        if not categoria_filtros or 'TODAS' in categoria_filtros:
-            categoria_filtros = ['TODOS']
+        # Si no hay filtro o se selecciona 'TODAS'
+        posts = posts_query.filter(categoria__in=valid_categories_keys).order_by('-fecha_publicacion')
+        if categoria_filtros and ('TODAS' in categoria_filtros or 'TODOS' in categoria_filtros):
+            categoria_filtros = ['TODAS'] # Para mantener el filtro 'Todas' resaltado
+
+    # 3. Restricción de publicación
+    user_can_post = True
+    if current_logged_in_user and current_logged_in_user.rol != 'ADMIN' and tipo_filtro == 'ADMIN':
+        # Un Comerciante o Proveedor no puede publicar en el feed de ADMIN
+        user_can_post = False
 
     # NUEVO: Carga de regiones para la barra lateral
     try:
@@ -333,13 +365,20 @@ def plataforma_comerciante_view(request):
     except Exception:
         regiones = [] # Retorna lista vacía si la tabla no existe o falla la importación
 
+    top_posters = Comerciante.objects.annotate(
+        post_count=Count('posts')
+    ).exclude(rol='ADMIN').order_by('-post_count')[:5] #
+
     news_preview = fetch_news_preview() 
     context = {
         'comerciante': current_logged_in_user,
         'rol_usuario': ROLES.get(current_logged_in_user.rol, 'Usuario'),
         'post_form': PostForm(),
         'posts': posts,
-        'CATEGORIA_POST_CHOICES': Post._meta.get_field('categoria').choices,
+        # Se pasa la lista completa de categorías al formulario de post y las separadas para los filtros
+        'CATEGORIA_POST_CHOICES': CATEGORIA_POST_CHOICES,
+        'COMMUNITY_CATEGORIES': COMMUNITY_CATEGORIES,
+        'ADMIN_CATEGORIES': ADMIN_CATEGORIES,
         'categoria_seleccionada': categoria_filtros,
         'comentario_form': ComentarioForm(),
         'message': (
@@ -348,6 +387,8 @@ def plataforma_comerciante_view(request):
         ),
         'tipo_filtro': tipo_filtro,
         'regiones': regiones, # AÑADIDO al contexto
+        'user_can_post': user_can_post, # NUEVA VARIABLE DE CONTEXTO
+        'top_posters': top_posters,  # AÑADIDO: Lista de usuarios más activos
     }
 
     return render(request, 'usuarios/plataforma_comerciante.html', context)
@@ -360,6 +401,23 @@ def publicar_post_view(request):
         if not current_logged_in_user:
             messages.error(request, 'Debes iniciar sesión para publicar.')
             return redirect('login')
+        
+        # VALIDACIÓN ADICIONAL DE RESTRICCIÓN DE PUBLICACIÓN
+        # Si el usuario no es Admin y está intentando publicar una categoría de Admin, se le prohíbe.
+        # Esta validación es importante para reforzar la seguridad de la vista.
+        is_admin_category = False
+        for key, _ in ADMIN_CATEGORIES:
+            if key == request.POST.get('categoria'):
+                is_admin_category = True
+                break
+                
+        if is_admin_category and current_logged_in_user.rol != 'ADMIN':
+            messages.error(
+                request, 
+                'No tienes permiso para publicar en la categoría seleccionada.'
+            )
+            return redirect('plataforma_comerciante')
+
 
         try:
             form = PostForm(request.POST, request.FILES)
@@ -393,7 +451,6 @@ def publicar_post_view(request):
             messages.error(request, f'Ocurrió un error al publicar: {e}')
 
     return redirect('plataforma_comerciante')
-
 
 def post_detail_view(request, post_id):
     global current_logged_in_user

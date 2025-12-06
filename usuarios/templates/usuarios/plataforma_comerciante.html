@@ -120,121 +120,10 @@
                     </div>
                 {% endif %}
 
-                {# AJUSTE CLAVE: El grid ahora es de 2 columnas (9/3). Se elimina el aside izquierdo. #}
+                
                 <div class="grid grid-cols-12 gap-8">
                     
-                    <main class="col-span-12 lg:col-span-9 order-1">
-                        <div class="space-y-4">
-                            
-                            <div class="bg-white dark:bg-white rounded-xl shadow-lg p-4 mb-6 border border-gray-200">
-                                <h1 class="text-text-light dark:text-text-dark text-xl font-bold tracking-tight mb-4">
-                                    Foro de la Comunidad {% if tipo_filtro == 'ADMIN' %}<span class="text-secondary">(Admin)</span>{% endif %}
-                                </h1>
-                                <div class="flex items-center gap-4">
-                                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shrink-0" 
-                                         style='background-image: url("{{ comerciante.get_profile_picture_url }}");'>
-                                    </div>
-                                    <span class="text-text-muted-light dark:text-text-muted-dark cursor-pointer flex-grow" onclick="document.getElementById('off-canvas-publicar').classList.add('active');">
-                                        ¿Qué quieres compartir, {{ comerciante.nombre_apellido|truncatewords:1 }}?
-                                    </span>
-                                    <button type="button" onclick="document.getElementById('off-canvas-publicar').classList.add('active');" 
-                                            class="min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-9 px-4 bg-secondary text-white text-sm font-bold leading-normal hover:bg-secondary/90 transition-colors">
-                                        Publicar
-                                    </button>
-                                </div>
-                                
-                                {# ELIMINADO: La barra de filtros horizontal redundante #}
-
-                            </div>
-                            
-                            <!-- ============================== -->
-<!-- FEED TWITTER/X (BLOQUE MODIFICADO) -->
-<!-- ============================== -->
-
-<div class="bg-white dark:bg-white rounded-xl shadow-lg border border-gray-200">
-    <div class="divide-y divide-gray-200 dark:divide-gray-700">
-
-        {% for post in posts %}
-        <div id="post-{{ post.id }}">
-            <div class="flex p-5 hover:bg-gray-50 transition-colors">
-
-                <!-- Avatar -->
-                <div class="mr-4">
-                    <div class="w-12 h-12 rounded-full bg-cover bg-center shadow"
-                         style="background-image:url('{{ post.comerciante.get_profile_picture_url }}');">
-                    </div>
-                </div>
-
-                <!-- CONTENIDO DEL POST ESTILO X -->
-                <div class="flex-1">
-
-                    <!-- Cabecera: Nombre + @user + fecha -->
-                    <div class="flex items-center gap-2 text-sm mb-1">
-                        <span class="font-bold text-text-light">
-                            {{ post.comerciante.nombre_apellido|truncatewords:2 }}
-                        </span>
-                        <span class="text-gray-500">@{{ post.comerciante.nombre_negocio|slugify }}</span>
-                        ·
-                        <span class="text-gray-500">{{ post.fecha_publicacion|timesince }}</span>
-                    </div>
-
-                    <!-- Título opcional -->
-                    {% if post.titulo %}
-                    <p class="text-[15px] font-semibold mb-1">
-                        {{ post.titulo }}
-                    </p>
-                    {% endif %}
-
-                    <!-- TEXTO (con saltos reales como X) -->
-                    <p class="text-[15px] leading-relaxed whitespace-pre-line mb-3">
-                        {{ post.contenido }}
-                    </p>
-
-                    <!-- Hashtags -->
-                    {% if post.etiquetas %}
-                    <p class="text-primary text-[15px] mb-3">
-                        {% for e in post.etiquetas %}
-                            #{{ e }}
-                        {% endfor %}
-                    </p>
-                    {% endif %}
-
-                    <!-- Imagen estilo Twitter -->
-                    {% if post.imagen_url %}
-                    <div class="rounded-2xl overflow-hidden border border-gray-200 mb-3">
-                        <img src="{{ post.imagen_url }}"
-                             class="w-full max-h-[550px] object-cover">
-                    </div>
-                    {% endif %}
-
-                    <!-- ACCIONES -->
-                    <div class="flex items-center text-gray-500 text-sm gap-8 mt-2">
-
-                        <!-- Comentarios -->
-                        <a href="{% url 'post_detail' post_id=post.id %}#comments-section"
-                        class="flex items-center gap-1 hover:text-primary transition-colors">
-                            <span class="material-symbols-outlined text-base">chat_bubble</span>
-                            <span>{{ post.comentarios_count }}</span>
-                        </a>
-
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
-        {% empty %}
-        <div class="p-6 text-center text-gray-500">No hay publicaciones aún.</div>
-        {% endfor %}
-
-    </div>
-</div>
-
-                        </div>
-                    </main>
-
-                    {# ASIDE DE NOTICIAS Y FILTROS LATERALES #}
-                    <aside class="col-span-12 lg:col-span-3 order-2">
+                    <aside class="col-span-12 lg:col-span-3 order-1 lg:order-1">
                         <div class="space-y-8">
                             
                             <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
@@ -258,12 +147,29 @@
 
                                 <h4 class="text-sm font-semibold text-text-light dark:text-text-dark mb-2 border-b pb-1 mt-4">Temas del Foro</h4>
                                 <div class="flex flex-wrap gap-2 mb-4">
-                                    {% for key, value in CATEGORIA_POST_CHOICES %}
-                                        <a href="{% url 'plataforma_comerciante' %}?categoria={{ key }}" 
-                                           class="text-xs font-medium bg-gray-100 text-gray-700 hover:bg-primary hover:text-white px-2 py-1 rounded-full pill-link">
-                                            {{ value }}
-                                        </a>
-                                    {% endfor %}
+                                    
+                                    {# Opción "Todas las temáticas" #}
+                                    <a href="{% url 'plataforma_comerciante' %}?tipo_filtro={{ tipo_filtro }}&categoria=TODAS" 
+                                       class="text-xs font-medium {% if 'TODAS' in categoria_seleccionada or not categoria_seleccionada %}bg-primary text-white{% else %}bg-gray-100 text-gray-700 hover:bg-primary/20{% endif %} px-2 py-1 rounded-full pill-link">
+                                        Todas las temáticas
+                                    </a>
+
+                                    {# Opciones de Categoría - Condicionales según el filtro principal #}
+                                    {% if tipo_filtro == 'ADMIN' %}
+                                         {% for key, value in ADMIN_CATEGORIES %}
+                                            <a href="{% url 'plataforma_comerciante' %}?tipo_filtro=ADMIN&categoria={{ key }}" 
+                                               class="text-xs font-medium bg-gray-100 text-gray-700 hover:bg-secondary hover:text-white px-2 py-1 rounded-full pill-link">
+                                                {{ value }}
+                                            </a>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for key, value in COMMUNITY_CATEGORIES %}
+                                            <a href="{% url 'plataforma_comerciante' %}?categoria={{ key }}" 
+                                               class="text-xs font-medium bg-gray-100 text-gray-700 hover:bg-primary hover:text-white px-2 py-1 rounded-full pill-link">
+                                                {{ value }}
+                                            </a>
+                                        {% endfor %}
+                                    {% endif %}
                                 </div>
 
                                 <h4 class="text-sm font-semibold text-text-light dark:text-text-dark mb-2 border-b pb-1 mt-4">Regiones (Directorio)</h4>
@@ -280,6 +186,144 @@
                                     </a>
                                 </div>
                             </div>
+
+                            <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                                <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-secondary text-xl">trending_up</span>
+                                    Comerciantes Destacados
+                                </h3>
+                                
+                                <div class="space-y-4">
+                                    {% for c in top_posters %}
+                                    <a href="{% url 'perfil' %}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shrink-0" 
+                                            style='background-image: url("{{ c.get_profile_picture_url }}");'>
+                                        </div>
+                                        
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-text-light dark:text-text-dark text-sm font-semibold leading-none truncate">{{ c.nombre_apellido|truncatewords:2 }}</p>
+                                            <p class="text-text-muted-light dark:text-text-muted-dark text-xs leading-none mt-1">@{{ c.nombre_negocio|slugify|truncatechars:15 }}</p>
+                                        </div>
+                                        <span class="text-xs font-bold text-primary shrink-0">{{ c.post_count }} Posts</span>
+                                    </a>
+                                    {% empty %}
+                                    <p class="text-text-muted-light text-sm">No hay suficientes datos de interacción aún.</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </aside>
+
+                    <main class="col-span-12 lg:col-span-6 order-2 lg:order-2">
+                        <div class="space-y-4">
+                            
+                            {# Botón de Publicación (Condicional) #}
+                            {% if user_can_post %}
+                            <div class="bg-white dark:bg-white rounded-xl shadow-lg p-4 mb-6 border border-gray-200">
+                                <h1 class="text-text-light dark:text-text-dark text-xl font-bold tracking-tight mb-4">
+                                    Foro de la Comunidad {% if tipo_filtro == 'ADMIN' %}<span class="text-secondary">(Admin)</span>{% endif %}
+                                </h1>
+                                <div class="flex items-center gap-4">
+                                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shrink-0" 
+                                         style='background-image: url("{{ comerciante.get_profile_picture_url }}");'>
+                                    </div>
+                                    <span class="text-text-muted-light dark:text-text-muted-dark cursor-pointer flex-grow" onclick="document.getElementById('off-canvas-publicar').classList.add('active');">
+                                        ¿Qué quieres compartir, {{ comerciante.nombre_apellido|truncatewords:1 }}?
+                                    </span>
+                                    <button type="button" onclick="document.getElementById('off-canvas-publicar').classList.add('active');" 
+                                            class="min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-9 px-4 bg-secondary text-white text-sm font-bold leading-normal hover:bg-secondary/90 transition-colors">
+                                        Publicar
+                                    </button>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="bg-white dark:bg-white rounded-xl shadow-lg p-4 mb-6 border border-gray-200 text-center">
+                                <h1 class="text-text-light dark:text-text-dark text-xl font-bold tracking-tight mb-2">
+                                    Visualizando Feed de Administración
+                                </h1>
+                                <p class="text-sm text-text-muted-light">Solo los administradores pueden crear publicaciones aquí. Puedes comentar los posts existentes.</p>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="bg-white dark:bg-white rounded-xl shadow-lg border border-gray-200">
+    <div class="divide-y divide-gray-200 dark:divide-gray-700">
+
+        {% for post in posts %}
+        <div id="post-{{ post.id }}">
+            <div class="flex p-5 hover:bg-gray-50 transition-colors">
+
+                <div class="mr-4">
+                    <div class="w-12 h-12 rounded-full bg-cover bg-center shadow"
+                         style="background-image:url('{{ post.comerciante.get_profile_picture_url }}');">
+                    </div>
+                </div>
+
+                <div class="flex-1">
+
+                    <div class="flex items-center gap-2 text-sm mb-1">
+                        <span class="font-bold text-text-light">
+                            {{ post.comerciante.nombre_apellido|truncatewords:2 }}
+                        </span>
+                        <span class="text-gray-500">@{{ post.comerciante.nombre_negocio|slugify }}</span>
+                        ·
+                        <span class="text-gray-500">{{ post.fecha_publicacion|timesince }}</span>
+                    </div>
+
+                    {% if post.titulo %}
+                    <p class="text-[15px] font-semibold mb-1">
+                        {{ post.titulo }}
+                    </p>
+                    {% endif %}
+
+                    <p class="text-[15px] leading-relaxed whitespace-pre-line mb-3">
+                        {{ post.contenido }}
+                    </p>
+
+                    {% if post.etiquetas %}
+                    <p class="text-primary text-[15px] mb-3">
+                        {% for e in post.etiquetas %}
+                            #{{ e }}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+
+                    {% if post.imagen_url %}
+                    <div class="rounded-2xl overflow-hidden border border-gray-200 mb-3">
+                        <a href="{{ post.imagen_url }}" target="_blank">
+                             <img src="{{ post.imagen_url }}"
+                                 class="w-full max-h-[550px] object-cover">
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div class="flex items-center text-gray-500 text-sm gap-8 mt-2">
+
+                        <a href="{% url 'post_detail' post_id=post.id %}#comments-section"
+                        class="flex items-center gap-1 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined text-base">chat_bubble</span>
+                            <span>{{ post.comentarios_count }}</span>
+                        </a>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        {% empty %}
+        <div class="p-6 text-center text-gray-500">No hay publicaciones aún.</div>
+        {% endfor %}
+
+    </div>
+</div>
+
+                        </div>
+                    </main>
+
+                    <aside class="col-span-12 lg:col-span-3 order-3 lg:order-3">
+                        <div class="space-y-8">
+                            
                             
                             <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
                                 <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4 flex items-center gap-2">
@@ -385,10 +429,9 @@
 
             <div>
                 <label for="{{ post_form.contenido.id_for_label }}" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">{{ post_form.contenido.label }}</label>
-                <textarea name="{{ comentario_form.contenido.name }}" id="{{ post_form.contenido.id_for_label }}"
-                    placeholder="Escribe tu comentario..." rows="5"
-                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-primary placeholder:text-text-muted-light dark:placeholder:text-text-muted-dark p-[10px] text-base font-normal leading-normal max-h-48 min-h-24">
-                </textarea>
+                <textarea name="{{ post_form.contenido.name }}" id="{{ post_form.contenido.id_for_label }}"
+                    placeholder="Escribe aquí el contenido de tu publicación..." rows="5"
+                    class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-primary placeholder:text-text-muted-light dark:placeholder:text-text-muted-dark p-[10px] text-base font-normal leading-normal max-h-48 min-h-24">{{ post_form.contenido.value|default:'' }}</textarea>
                 {% for error in post_form.contenido.errors %}
                     <p class="text-red-500 text-xs mt-1">{{ error }}</p>
                 {% endfor %}
