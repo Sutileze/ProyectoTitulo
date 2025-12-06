@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error de Autenticación - Club Almacén</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1193d4',
+                    },
+                    fontFamily: {
+                        sans: ['Work Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 text-center">
+            
+            <!-- Icono de error -->
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
+                <span class="material-symbols-outlined text-red-600 text-5xl">error</span>
+            </div>
+            
+            <h1 class="text-2xl font-bold text-gray-800 mb-3">
+                Error de Autenticación
+            </h1>
+            
+            <p class="text-gray-600 mb-8">
+                Lo sentimos, hubo un problema al iniciar sesión con tu cuenta social. Por favor, intenta nuevamente.
+            </p>
+            
+            <div class="space-y-3">
+                <a 
+                    href="{% url 'cuenta' %}" 
+                    class="block w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 transition-all"
+                >
+                    Volver a Intentar
+                </a>
+                
+                <a 
+                    href="{% url 'index' %}" 
+                    class="block w-full border-2 border-gray-300 text-gray-700 font-bold py-3 rounded-xl hover:border-primary hover:text-primary transition-all"
+                >
+                    Ir al Inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
