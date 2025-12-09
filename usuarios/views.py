@@ -402,7 +402,7 @@ def plataforma_comerciante_view(request):
 
 # --- NUEVA VISTA DE NOTIFICACIONES ---
 def notificaciones_view(request):
-    """Muestra la lista de avisos del admin al comerciante, marcando los no leídos."""
+    """Muestra la lista de avisos o el detalle de un aviso específico."""
     global current_logged_in_user
 
     if not current_logged_in_user:
@@ -411,28 +411,39 @@ def notificaciones_view(request):
 
     comerciante = current_logged_in_user
     hoy = timezone.now().date()
+    aviso_id = request.GET.get('aviso_id') # Captura el ID para el detalle
     
     # 1. Obtener todos los avisos vigentes
     avisos_vigentes_qs = Aviso.objects.filter(
         Q(fecha_caducidad__isnull=True) | Q(fecha_caducidad__gte=hoy)
-    ).order_by('-fecha_creacion')
+    )
 
-    # 2. Anotar el estado de lectura para el usuario actual
-    notifications = avisos_vigentes_qs.annotate(
-        leido=Count('lecturas', filter=Q(lecturas__comerciante=comerciante))
-    ).order_by('leido', '-fecha_creacion') # No leídos primero (leido=0)
-
-    # 3. Marcar como leído si se accede a la lista (buena práctica UX)
-    #    Marcamos todos los avisos VIGENTES como leídos al cargar la lista.
-    for notification in notifications.filter(leido=0):
-        AvisoLeido.objects.get_or_create(aviso=notification, comerciante=comerciante)
+    if aviso_id:
+        # MODO DETALLE
+        aviso_detalle = get_object_or_404(avisos_vigentes_qs, id=aviso_id)
         
-    context = {
-        'comerciante': comerciante,
-        'notifications': notifications,
-    }
-    
-    return render(request, 'usuarios/notificaciones.html', context)
+        # Marcar este aviso como leído (si existe el modelo AvisoLeido)
+        AvisoLeido.objects.get_or_create(aviso=aviso_detalle, comerciante=comerciante)
+
+        context = {
+            'comerciante': comerciante,
+            'aviso_detalle': aviso_detalle, # Se pasa el objeto individual
+        }
+        return render(request, 'usuarios/notificaciones.html', context)
+        
+    else:
+        # MODO LISTA (Funcionalidad original)
+        notifications = avisos_vigentes_qs.annotate(
+            leido=Count('lecturas', filter=Q(lecturas__comerciante=comerciante))
+        ).order_by('leido', '-fecha_creacion') # No leídos primero
+
+        context = {
+            'comerciante': comerciante,
+            'notifications': notifications,
+        }
+        
+        # En el modo lista, NO marcamos todos como leídos automáticamente, solo al ver el detalle
+        return render(request, 'usuarios/notificaciones.html', context)
 
 
 def marcar_aviso_leido(request, aviso_id):

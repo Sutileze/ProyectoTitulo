@@ -358,8 +358,57 @@
                     <aside class="col-span-12 lg:col-span-3 order-3">
                         <div class="space-y-8">
                             
+                            {# INICIO BLOQUE: Avisos de Administración (Con estilo de tarjeta coloreada) #}
+                            <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                                <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-secondary text-xl">campaign</span>
+                                    Avisos de Administración
+                                </h3>
+                                
+                                <div class="space-y-4">
+                                    {% if top_avisos %}
+                                        {% for aviso in top_avisos %}
+                                            {# Se usa raw_color para construir border-, bg- y text- #}
+                                            {% with raw_color_name=aviso.tipo|first_word_to_raw_color %}
+                                                <a href="{% url 'notificaciones' %}?aviso_id={{ aviso.id }}" 
+                                                class="group block p-3 rounded-lg border-l-4 border-{{ raw_color_name }} 
+                                                        bg-{{ raw_color_name }}/5 transition-colors hover:bg-gray-100">
+                                                    
+                                                    <div class="flex items-start space-x-3">
+                                                        {# Ícono con el color dinámico y el tipo de ícono #}
+                                                        <span class="material-symbols-outlined text-{{ raw_color_name }} text-2xl shrink-0">
+                                                            {{ aviso.tipo|first_word_to_icon }}
+                                                        </span>
+                                                        
+                                                        <div class="flex-1 min-w-0">
+                                                            <p class="text-text-light font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                                                                {{ aviso.titulo }} 
+                                                            </p>
+                                                            <p class="text-xs text-text-muted-light mt-1">
+                                                                <span class="font-bold text-{{ raw_color_name }}">Tipo: {{ aviso.tipo }}</span> 
+                                                                <span class="text-text-muted-light dark:text-text-muted-dark"> | Vence: {{ aviso.fecha_caducidad|default:"Sin caducidad"|date:"d M Y" }}</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            {% endwith %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-4 px-2 bg-gray-50 rounded-lg border border-gray-200">
+                                            <span class="material-symbols-outlined text-3xl text-green-500 mb-1">
+                                                check_circle
+                                            </span>
+                                            <p class="text-text-muted-light text-sm font-medium">
+                                                No hay avisos de administración vigentes.
+                                            </p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {# FIN BLOQUE: Avisos de Administración #}
 
-
+                            
+                            {# INICIO BLOQUE: Noticias y Medios #}
                             <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
                                 <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4 flex items-center gap-2">
                                     <span class="material-symbols-outlined text-secondary text-xl">newspaper</span>
@@ -391,39 +440,34 @@
                                     </div>
                                 </div>
                             </div>
+                            {# FIN BLOQUE: Noticias y Medios #}
                             
                             <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                                <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-secondary text-xl">campaign</span>
-                                    Avisos de Administración
-                                </h3>
-                                
+                                <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4">Próximos Eventos</h3>
                                 <div class="space-y-4">
-                                    {% if top_avisos %}
-                                        {% for aviso in top_avisos %}
-                                            <div class="pb-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 last:pb-0">
-                                                <span class="material-symbols-outlined text-primary text-base mr-2 mt-1 align-top">{{ aviso.tipo|first_word_to_icon }}</span>
-                                                <a href="{% url 'notificaciones' %}?aviso_id={{ aviso.id }}" 
-                                                class="text-text-light dark:text-text-dark font-semibold text-sm leading-snug hover:text-primary transition-colors inline-block align-top">
-                                                    {{ aviso.titulo|truncatechars:50 }}
-                                                </a>
-                                                <p class="text-text-muted-light dark:text-text-muted-dark text-xs mt-1">
-                                                    Vence: {{ aviso.fecha_caducidad|default:"Sin caducidad"|date:"d M Y" }}
-                                                </p>
-                                            </div>
-                                        {% endfor %}
-                                    {% else %}
-                                        {# INICIO MODIFICACIÓN: Nuevo estilo para estado vacío #}
-                                        <div class="text-center py-4 px-2 bg-gray-50 rounded-lg border border-gray-200">
-                                            <span class="material-symbols-outlined text-3xl text-green-500 mb-1">
-                                                check_circle
-                                            </span>
-                                            <p class="text-text-muted-light text-sm font-medium">
-                                                No hay avisos de administración vigentes.
-                                            </p>
+                                    {# Los datos de Eventos usan una estructura diferente a los avisos #}
+                                    <div class="flex gap-4">
+                                        <div class="flex flex-col items-center justify-center bg-primary/10 dark:bg-primary/20 text-primary rounded-lg p-2 w-16 h-16 shrink-0">
+                                            <span class="text-sm font-bold">JUL</span>
+                                            <span class="2xl font-bold">25</span>
                                         </div>
-                                        {# FIN MODIFICACIÓN: Nuevo estilo para estado vacío #}
-                                    {% endif %}
+                                        <div>
+                                            <p class="text-text-light dark:text-text-dark font-semibold">Taller Online: Marketing en Redes Sociales</p>
+                                            <p class="text-text-muted-light dark:text-text-muted-dark text-sm">18:00 - Online</p>
+                                            <a class="text-primary text-xs font-bold mt-1 inline-block" href="#">Ver detalles</a>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-4">
+                                        <div class="flex flex-col items-center justify-center bg-primary/10 dark:bg-primary/20 text-primary rounded-lg p-2 w-16 h-16 shrink-0">
+                                            <span class="text-sm font-bold">AGO</span>
+                                            <span class="2xl font-bold">12</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-text-light dark:text-text-dark font-semibold">Reunión Mensual de Comerciantes - Zona Centro</p>
+                                            <p class="text-text-muted-light dark:text-text-muted-dark text-sm">19:30 - Centro Cívico</p>
+                                            <a class="text-primary text-xs font-bold mt-1 inline-block" href="#">Ver detalles</a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
