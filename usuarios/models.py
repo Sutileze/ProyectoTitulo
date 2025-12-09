@@ -23,6 +23,13 @@ TIPO_NEGOCIO_CHOICES = [
     ('FOODTRUCK', 'Food Truck/Carro de Comida'),
 ]
 
+AVISO_TIPOS = [
+    ('CAPACITACION', 'Capacitación'),
+    ('EVENTO', 'Evento'),
+    ('SORTEO', 'Sorteo/Concurso'),
+    ('GENERAL', 'General/Aviso'),
+]
+
 # Opciones de Intereses
 INTERESTS_CHOICES = [
     ('MARKETING', 'Marketing Digital'),
@@ -266,6 +273,44 @@ class Beneficio(models.Model):
 
     def __str__(self):
         return f"[{self.get_categoria_display()}] {self.titulo}"
+class Aviso(models.Model):
+    """Modelo para avisos e invitaciones de la administración a los comerciantes."""
+    titulo = models.CharField(max_length=200, verbose_name="Título del Aviso")
+    contenido = models.TextField(verbose_name="Contenido")
+    tipo = models.CharField(max_length=50, choices=AVISO_TIPOS, default='GENERAL', verbose_name="Tipo de Aviso")
+    fecha_caducidad = models.DateField(null=True, blank=True, verbose_name="Fecha de Caducidad")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Aviso de Administración'
+        verbose_name_plural = 'Avisos de Administración'
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f"[{self.get_tipo_display()}] {self.titulo}"
+
+    def is_vigente(self):
+        """Verifica si el aviso está vigente (no ha caducado)."""
+        if self.fecha_caducidad:
+            return self.fecha_caducidad >= timezone.now().date()
+        return True # Si no tiene caducidad, es vigente.
+    is_vigente.boolean = True
+    is_vigente.short_description = 'Vigente'
+
+
+class AvisoLeido(models.Model):
+    """Modelo para rastrear qué comerciante ha leído qué aviso."""
+    aviso = models.ForeignKey(Aviso, on_delete=models.CASCADE, related_name='lecturas')
+    comerciante = models.ForeignKey(Comerciante, on_delete=models.CASCADE, related_name='avisos_leidos')
+    fecha_lectura = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Aviso Leído'
+        verbose_name_plural = 'Avisos Leídos'
+        unique_together = ('aviso', 'comerciante')
+        
+    def __str__(self):
+        return f"Aviso {self.aviso.titulo} leído por {self.comerciante.nombre_apellido}"
 
 
 class Proveedor(models.Model):

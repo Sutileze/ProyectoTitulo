@@ -2,7 +2,9 @@
 
 from django import forms
 from django.contrib.auth.hashers import make_password
-from usuarios.models import Comerciante, Beneficio, Post
+from usuarios.models import Comerciante, Beneficio, Post, Aviso
+from django.forms import DateInput # Importar DateInput para el widget de fecha
+
 
 
 class ComercianteAdminForm(forms.ModelForm):
@@ -63,5 +65,27 @@ class PostAdminForm(forms.ModelForm):
             'categoria',
             'imagen_url',
             'etiquetas',
-            'comerciante',   # para asignar a qué comerciante pertenece
-        ]
+        ] 
+    def __init__(self, *args, **kwargs):
+        admin_category_choices = kwargs.pop('admin_category_choices', None)
+        
+        super().__init__(*args, **kwargs)
+
+        if admin_category_choices is not None:
+            self.fields['categoria'].choices = admin_category_choices
+
+class AvisoForm(forms.ModelForm):
+    """Formulario para que el administrador cree y edite Avisos."""
+    class Meta:
+        model = Aviso
+        fields = ['titulo', 'contenido', 'tipo', 'fecha_caducidad']
+        widgets = {
+            # Usar DateInput para mejorar la experiencia de usuario en la selección de la fecha
+            'fecha_caducidad': DateInput(attrs={'type': 'date', 'class': 'form-input'}),
+            'titulo': forms.TextInput(attrs={'class': 'form-input'}),
+            'contenido': forms.Textarea(attrs={'class': 'form-input', 'rows': 4}),
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'fecha_caducidad': 'Fecha de Caducidad (Opcional)',
+        }

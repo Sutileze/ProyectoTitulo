@@ -27,5 +27,7 @@ urlpatterns = [
     path('redes-sociales/', views.redes_sociales_view, name='redes_sociales'), 
     # DIRECTORIO DE PROVEEDORES
     # 👇 ESTA ES LA RUTA QUE FALTABA
+    path('notificaciones/', views.notificaciones_view, name='notificaciones'),
+    path('notificaciones/marcar-leido/<int:aviso_id>/', views.marcar_aviso_leido, name='marcar_aviso_leido'),
 
 ]

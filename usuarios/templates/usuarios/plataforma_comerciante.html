@@ -1,4 +1,5 @@
 {% load static %}
+{% load my_custom_filters %}
 <!DOCTYPE html>
 <html class="light" lang="es">
 <head>
@@ -82,18 +83,42 @@
                     <div class="flex items-center gap-3">
                         <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Logo de la Plataforma" class="h-24 w-auto"/>
                     </div>
+                    {# INICIO NAVBAR CON RESALTADO #}
                     <nav class="hidden md:flex gap-6 text-text-muted-light dark:text-text-muted-dark font-semibold text-sm">
-                        <a href="{% url 'plataforma_comerciante' %}" class="text-primary transition-colors">Plataforma</a>
-                        <a href="{% url 'directorio' %}" class="hover:text-primary transition-colors">Proveedores</a> 
-                        <a href="{% url 'beneficios' %}" class="hover:text-primary transition-colors">Beneficios</a>
-                        <a href="{% url 'redes_sociales' %}" class="hover:text-primary transition-colors">Redes Sociales</a>
+                        {% with path=request.path %}
+                        <a href="{% url 'plataforma_comerciante' %}" 
+                           class="{% if '/plataforma/' in path or path == '/' or '/post/' in path or '/publicar/' in path %}text-primary{% else %}hover:text-primary text-text-muted-light{% endif %} transition-colors">
+                            Plataforma
+                        </a>
+                        <a href="{% url 'directorio' %}" 
+                           class="{% if '/directorio/' in path or '/proveedor/' in path %}text-primary{% else %}hover:text-primary text-text-muted-light{% endif %} transition-colors">
+                            Proveedores
+                        </a> 
+                        <a href="{% url 'beneficios' %}" 
+                           class="{% if '/beneficios/' in path %}text-primary{% else %}hover:text-primary text-text-muted-light{% endif %} transition-colors">
+                            Beneficios
+                        </a>
+                        <a href="{% url 'redes_sociales' %}" 
+                           class="{% if '/redes-sociales/' in path %}text-primary{% else %}hover:text-primary text-text-muted-light{% endif %} transition-colors">
+                            Redes Sociales
+                        </a>
+                        {% endwith %}
                         <a href="{% url 'crear_ticket_soporte' %}" class="btn btn-outline-danger"><i class="bi bi-life-preserver"></i> Solicitar soporte</a>
                     </nav>
+                    {# FIN NAVBAR CON RESALTADO #}
                 </div>
                 <div class="flex justify-end gap-4 items-center">
-                    <button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-transparent text-text-muted-light dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <a href="{% url 'notificaciones' %}" class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-transparent text-text-muted-light dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-gray-700 relative">
                         <span class="material-symbols-outlined text-2xl">notifications</span>
-                    </button>
+                        {# NEW: Contador de notificaciones no leídas #}
+                        {% if avisos_no_leidos_count > 0 %}
+                            <span class="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-600 text-white text-xs flex items-center justify-center p-1 leading-none">
+                                {{ avisos_no_leidos_count }}
+                            </span>
+                        {% endif %}
+                    </a>
+                    
+                    <a href="{% url 'perfil' %}" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     
                     <a href="{% url 'perfil' %}" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
@@ -123,7 +148,8 @@
                 
                 <div class="grid grid-cols-12 gap-8">
                     
-                    <aside class="col-span-12 lg:col-span-3 order-1 lg:order-1">
+                    {# INICIO COLUMNA IZQUIERDA (FILTROS) | 3/12 columns #}
+                    <aside class="col-span-12 lg:col-span-3 order-1"> 
                         <div class="space-y-8">
                             
                             <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
@@ -147,29 +173,28 @@
 
                                 <h4 class="text-sm font-semibold text-text-light dark:text-text-dark mb-2 border-b pb-1 mt-4">Temas del Foro</h4>
                                 <div class="flex flex-wrap gap-2 mb-4">
-                                    
-                                    {# Opción "Todas las temáticas" #}
-                                    <a href="{% url 'plataforma_comerciante' %}?tipo_filtro={{ tipo_filtro }}&categoria=TODAS" 
-                                       class="text-xs font-medium {% if 'TODAS' in categoria_seleccionada or not categoria_seleccionada %}bg-primary text-white{% else %}bg-gray-100 text-gray-700 hover:bg-primary/20{% endif %} px-2 py-1 rounded-full pill-link">
-                                        Todas las temáticas
+                                    {# Botón Todos con resaltado #}
+                                    <a href="{% url 'plataforma_comerciante' %}?tipo_filtro={{ tipo_filtro }}"
+                                       class="text-xs font-medium px-3 py-1 rounded-full pill-link
+                                       {% if categoria_seleccionada|length == 1 and 'TODOS' in categoria_seleccionada %}
+                                            bg-primary text-white
+                                       {% else %}
+                                            bg-gray-100 text-gray-700 hover:bg-primary hover:text-white
+                                       {% endif %}">
+                                        Todos los temas
                                     </a>
-
-                                    {# Opciones de Categoría - Condicionales según el filtro principal #}
-                                    {% if tipo_filtro == 'ADMIN' %}
-                                         {% for key, value in ADMIN_CATEGORIES %}
-                                            <a href="{% url 'plataforma_comerciante' %}?tipo_filtro=ADMIN&categoria={{ key }}" 
-                                               class="text-xs font-medium bg-gray-100 text-gray-700 hover:bg-secondary hover:text-white px-2 py-1 rounded-full pill-link">
-                                                {{ value }}
-                                            </a>
-                                        {% endfor %}
-                                    {% else %}
-                                        {% for key, value in COMMUNITY_CATEGORIES %}
-                                            <a href="{% url 'plataforma_comerciante' %}?categoria={{ key }}" 
-                                               class="text-xs font-medium bg-gray-100 text-gray-700 hover:bg-primary hover:text-white px-2 py-1 rounded-full pill-link">
-                                                {{ value }}
-                                            </a>
-                                        {% endfor %}
-                                    {% endif %}
+                                    {# Categorías individuales #}
+                                    {% for key, value in CATEGORIA_POST_CHOICES %}
+                                        <a href="{% url 'plataforma_comerciante' %}?categoria={{ key }}&tipo_filtro={{ tipo_filtro }}" 
+                                           class="text-xs font-medium px-3 py-1 rounded-full pill-link
+                                           {% if key in categoria_seleccionada and categoria_seleccionada|length == 1 %}
+                                                bg-primary text-white
+                                           {% else %}
+                                                bg-gray-100 text-gray-700 hover:bg-primary hover:text-white
+                                           {% endif %}">
+                                            {{ value }}
+                                        </a>
+                                    {% endfor %}
                                 </div>
 
                                 <h4 class="text-sm font-semibold text-text-light dark:text-text-dark mb-2 border-b pb-1 mt-4">Regiones (Directorio)</h4>
@@ -186,47 +211,50 @@
                                     </a>
                                 </div>
                             </div>
-
+                            
                             <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
                                 <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-secondary text-xl">trending_up</span>
-                                    Comerciantes Destacados
+                                    <span class="material-symbols-outlined text-primary text-xl">groups</span>
+                                    Top Comentaristas
                                 </h3>
                                 
                                 <div class="space-y-4">
-                                    {% for c in top_posters %}
-                                    <a href="{% url 'perfil' %}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shrink-0" 
-                                            style='background-image: url("{{ c.get_profile_picture_url }}");'>
+                                    {# Usando top_posters del contexto #}
+                                    {% for poster in top_posters %}
+                                        <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3 last:border-b-0 last:pb-0">
+                                            <div class="flex items-center">
+                                                <div class="w-8 h-8 rounded-full bg-cover bg-center shadow mr-2 shrink-0" 
+                                                     style="background-image:url('{{ poster.get_profile_picture_url }}');">
+                                                </div>
+                                                <p class="text-text-light dark:text-text-dark font-semibold text-sm leading-snug">
+                                                    {{ poster.nombre_apellido|truncatewords:2 }}
+                                                </p>
+                                            </div>
+                                            <span class="text-xs font-bold text-primary">{{ poster.post_count }} Posts</span>
                                         </div>
-                                        
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-text-light dark:text-text-dark text-sm font-semibold leading-none truncate">{{ c.nombre_apellido|truncatewords:2 }}</p>
-                                            <p class="text-text-muted-light dark:text-text-muted-dark text-xs leading-none mt-1">@{{ c.nombre_negocio|slugify|truncatechars:15 }}</p>
-                                        </div>
-                                        <span class="text-xs font-bold text-primary shrink-0">{{ c.post_count }} Posts</span>
-                                    </a>
                                     {% empty %}
-                                    <p class="text-text-muted-light text-sm">No hay suficientes datos de interacción aún.</p>
+                                        <p class="text-text-muted-light text-sm">No hay usuarios activos para mostrar.</p>
                                     {% endfor %}
                                 </div>
                             </div>
-                            
                         </div>
                     </aside>
+                    {# FIN COLUMNA IZQUIERDA #}
 
-                    <main class="col-span-12 lg:col-span-6 order-2 lg:order-2">
+
+                    {# INICIO COLUMNA CENTRAL (FORO/FEED) | 6/12 columns #}
+                    <main class="col-span-12 lg:col-span-6 order-2">
                         <div class="space-y-4">
                             
-                            {# Botón de Publicación (Condicional) #}
-                            {% if user_can_post %}
+                            {# Área de Publicación Condicional #}
+                            {% if posting_allowed %}
                             <div class="bg-white dark:bg-white rounded-xl shadow-lg p-4 mb-6 border border-gray-200">
                                 <h1 class="text-text-light dark:text-text-dark text-xl font-bold tracking-tight mb-4">
                                     Foro de la Comunidad {% if tipo_filtro == 'ADMIN' %}<span class="text-secondary">(Admin)</span>{% endif %}
                                 </h1>
                                 <div class="flex items-center gap-4">
                                     <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shrink-0" 
-                                         style='background-image: url("{{ comerciante.get_profile_picture_url }}");'>
+                                        style='background-image: url("{{ comerciante.get_profile_picture_url }}");'>
                                     </div>
                                     <span class="text-text-muted-light dark:text-text-muted-dark cursor-pointer flex-grow" onclick="document.getElementById('off-canvas-publicar').classList.add('active');">
                                         ¿Qué quieres compartir, {{ comerciante.nombre_apellido|truncatewords:1 }}?
@@ -238,93 +266,100 @@
                                 </div>
                             </div>
                             {% else %}
-                            <div class="bg-white dark:bg-white rounded-xl shadow-lg p-4 mb-6 border border-gray-200 text-center">
-                                <h1 class="text-text-light dark:text-text-dark text-xl font-bold tracking-tight mb-2">
-                                    Visualizando Feed de Administración
-                                </h1>
-                                <p class="text-sm text-text-muted-light">Solo los administradores pueden crear publicaciones aquí. Puedes comentar los posts existentes.</p>
+                            {# Mensaje de Solo Lectura #}
+                            <div class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 p-4 rounded-xl shadow-lg mb-6 border border-yellow-300">
+                                <h1 class="text-xl font-bold tracking-tight mb-2">Modo Solo Lectura (Admin)</h1>
+                                <p class="text-sm">Actualmente estás visualizando las publicaciones del equipo de administración. No es posible crear nuevas publicaciones ni comentarios en este modo.</p>
                             </div>
                             {% endif %}
                             
                             <div class="bg-white dark:bg-white rounded-xl shadow-lg border border-gray-200">
-    <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <div class="divide-y divide-gray-200 dark:divide-gray-700">
 
-        {% for post in posts %}
-        <div id="post-{{ post.id }}">
-            <div class="flex p-5 hover:bg-gray-50 transition-colors">
+                                    {% for post in posts %}
+                                    <div id="post-{{ post.id }}">
+                                        <div class="flex p-5 hover:bg-gray-50 transition-colors">
 
-                <div class="mr-4">
-                    <div class="w-12 h-12 rounded-full bg-cover bg-center shadow"
-                         style="background-image:url('{{ post.comerciante.get_profile_picture_url }}');">
-                    </div>
-                </div>
+                                            <div class="mr-4">
+                                                <div class="w-12 h-12 rounded-full bg-cover bg-center shadow"
+                                                    style="background-image: url('{{ post.comerciante.get_profile_picture_url }}');">
+                                                </div>
+                                            </div>
 
-                <div class="flex-1">
+                                            <div class="flex-1">
 
-                    <div class="flex items-center gap-2 text-sm mb-1">
-                        <span class="font-bold text-text-light">
-                            {{ post.comerciante.nombre_apellido|truncatewords:2 }}
-                        </span>
-                        <span class="text-gray-500">@{{ post.comerciante.nombre_negocio|slugify }}</span>
-                        ·
-                        <span class="text-gray-500">{{ post.fecha_publicacion|timesince }}</span>
-                    </div>
+                                                <div class="flex items-center gap-2 text-sm mb-1">
+                                                    <span class="font-bold text-text-light">
+                                                        {{ post.comerciante.nombre_apellido|truncatewords:2 }}
+                                                    </span>
+                                                    <span class="text-gray-500">@{{ post.comerciante.nombre_negocio|slugify }}</span>
+                                                    ·
+                                                    <span class="text-gray-500">{{ post.fecha_publicacion|timesince }}</span>
+                                                    
+                                                    {# PÍLDORA DE CATEGORÍA #}
+                                                    <span class="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary ml-auto">
+                                                        {{ post.get_categoria_display }}
+                                                    </span>
+                                                    
+                                                </div>
 
-                    {% if post.titulo %}
-                    <p class="text-[15px] font-semibold mb-1">
-                        {{ post.titulo }}
-                    </p>
-                    {% endif %}
+                                                {% if post.titulo %}
+                                                <p class="text-[15px] font-semibold mb-1">
+                                                    {{ post.titulo }}
+                                                </p>
+                                                {% endif %}
 
-                    <p class="text-[15px] leading-relaxed whitespace-pre-line mb-3">
-                        {{ post.contenido }}
-                    </p>
+                                                <p class="text-[15px] leading-relaxed whitespace-pre-line mb-3">
+                                                    {{ post.contenido }}
+                                                </p>
 
-                    {% if post.etiquetas %}
-                    <p class="text-primary text-[15px] mb-3">
-                        {% for e in post.etiquetas %}
-                            #{{ e }}
-                        {% endfor %}
-                    </p>
-                    {% endif %}
+                                                {% if post.etiquetas %}
+                                                <p class="text-primary text-[15px] mb-3">
+                                                    {% for e in post.etiquetas|split:"," %}
+                                                        #{{ e|trim }}
+                                                    {% endfor %}
+                                                </p>
+                                                {% endif %}
 
-                    {% if post.imagen_url %}
-                    <div class="rounded-2xl overflow-hidden border border-gray-200 mb-3">
-                        <a href="{{ post.imagen_url }}" target="_blank">
-                             <img src="{{ post.imagen_url }}"
-                                 class="w-full max-h-[550px] object-cover">
-                        </a>
-                    </div>
-                    {% endif %}
+                                                {% if post.imagen_url %}
+                                                <div class="rounded-2xl overflow-hidden border border-gray-200 mb-3">
+                                                    <img src="{{ post.imagen_url }}"
+                                                            class="w-full max-h-[550px] object-cover">
+                                                </div>
+                                                {% endif %}
 
-                    <div class="flex items-center text-gray-500 text-sm gap-8 mt-2">
+                                                <div class="flex items-center text-gray-500 text-sm gap-8 mt-2">
 
-                        <a href="{% url 'post_detail' post_id=post.id %}#comments-section"
-                        class="flex items-center gap-1 hover:text-primary transition-colors">
-                            <span class="material-symbols-outlined text-base">chat_bubble</span>
-                            <span>{{ post.comentarios_count }}</span>
-                        </a>
+                                                    <a href="{% url 'post_detail' post_id=post.id %}#comments-section"
+                                                    class="flex items-center gap-1 hover:text-primary transition-colors">
+                                                        <span class="material-symbols-outlined text-base">chat_bubble</span>
+                                                        <span>{{ post.comentarios_count }}</span>
+                                                    </a>
 
-                    </div>
+                                                </div>
 
-                </div>
-            </div>
-        </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-        {% empty %}
-        <div class="p-6 text-center text-gray-500">No hay publicaciones aún.</div>
-        {% endfor %}
+                                    {% empty %}
+                                    <div class="p-6 text-center text-gray-500">No hay publicaciones aún.</div>
+                                    {% endfor %}
 
-    </div>
-</div>
+                                </div>
+                            </div>
 
                         </div>
                     </main>
+                    {# FIN COLUMNA CENTRAL #}
 
-                    <aside class="col-span-12 lg:col-span-3 order-3 lg:order-3">
+
+                    {# INICIO COLUMNA DERECHA (NOTICIAS Y EVENTOS) | 3/12 columns #}
+                    <aside class="col-span-12 lg:col-span-3 order-3">
                         <div class="space-y-8">
                             
-                            
+
+
                             <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
                                 <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4 flex items-center gap-2">
                                     <span class="material-symbols-outlined text-secondary text-xl">newspaper</span>
@@ -358,39 +393,49 @@
                             </div>
                             
                             <div class="bg-white dark:bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-                                <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4">Próximos Eventos</h3>
+                                <h3 class="text-text-light dark:text-text-dark text-lg font-bold mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-secondary text-xl">campaign</span>
+                                    Avisos de Administración
+                                </h3>
+                                
                                 <div class="space-y-4">
-                                    <div class="flex gap-4">
-                                        <div class="flex flex-col items-center justify-center bg-primary/10 dark:bg-primary/20 text-primary rounded-lg p-2 w-16 h-16 shrink-0">
-                                            <span class="text-sm font-bold">JUL</span>
-                                            <span class="2xl font-bold">25</span>
+                                    {% if top_avisos %}
+                                        {% for aviso in top_avisos %}
+                                            <div class="pb-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 last:pb-0">
+                                                <span class="material-symbols-outlined text-primary text-base mr-2 mt-1 align-top">{{ aviso.tipo|first_word_to_icon }}</span>
+                                                <a href="{% url 'notificaciones' %}?aviso_id={{ aviso.id }}" 
+                                                class="text-text-light dark:text-text-dark font-semibold text-sm leading-snug hover:text-primary transition-colors inline-block align-top">
+                                                    {{ aviso.titulo|truncatechars:50 }}
+                                                </a>
+                                                <p class="text-text-muted-light dark:text-text-muted-dark text-xs mt-1">
+                                                    Vence: {{ aviso.fecha_caducidad|default:"Sin caducidad"|date:"d M Y" }}
+                                                </p>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        {# INICIO MODIFICACIÓN: Nuevo estilo para estado vacío #}
+                                        <div class="text-center py-4 px-2 bg-gray-50 rounded-lg border border-gray-200">
+                                            <span class="material-symbols-outlined text-3xl text-green-500 mb-1">
+                                                check_circle
+                                            </span>
+                                            <p class="text-text-muted-light text-sm font-medium">
+                                                No hay avisos de administración vigentes.
+                                            </p>
                                         </div>
-                                        <div>
-                                            <p class="text-text-light dark:text-text-dark font-semibold">Taller Online: Marketing en Redes Sociales</p>
-                                            <p class="text-text-muted-light dark:text-text-muted-dark text-sm">18:00 - Online</p>
-                                            <a class="text-primary text-xs font-bold mt-1 inline-block" href="#">Ver detalles</a>
-                                        </div>
-                                    </div>
-                                    <div class="flex gap-4">
-                                        <div class="flex flex-col items-center justify-center bg-primary/10 dark:bg-primary/20 text-primary rounded-lg p-2 w-16 h-16 shrink-0">
-                                            <span class="text-sm font-bold">AGO</span>
-                                            <span class="2xl font-bold">12</span>
-                                        </div>
-                                        <div>
-                                            <p class="text-text-light dark:text-text-dark font-semibold">Reunión Mensual de Comerciantes - Zona Centro</p>
-                                            <p class="text-text-muted-light dark:text-text-muted-dark text-sm">19:30 - Centro Cívico</p>
-                                            <a class="text-primary text-xs font-bold mt-1 inline-block" href="#">Ver detalles</a>
-                                        </div>
-                                    </div>
+                                        {# FIN MODIFICACIÓN: Nuevo estilo para estado vacío #}
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
                     </aside>
+                    {# FIN COLUMNA DERECHA #}
                 </div>
             </main>
         </div>
     </div>
     
+    {# INICIO MODIFICACIÓN: Botón flotante móvil condicional #}
+    {% if posting_allowed %}
     <div class="fixed bottom-0 left-0 w-full p-4 lg:hidden z-40 bg-background-light dark:bg-background-dark border-t border-gray-200 dark:border-gray-700 shadow-lg">
         <button onclick="document.getElementById('off-canvas-publicar').classList.add('active');" 
                 class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-secondary text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] hover:bg-secondary/90 transition-colors duration-200">
@@ -398,6 +443,8 @@
             <span class="truncate">Crear publicación en el Foro</span>
         </button>
     </div>
+    {% endif %}
+    {# FIN MODIFICACIÓN: Botón flotante móvil condicional #}
 
     <div id="off-canvas-publicar" class="off-canvas-panel fixed top-0 right-0 w-full sm:w-1/2 lg:w-1/3 h-full bg-white dark:bg-white z-50 shadow-2xl overflow-y-auto p-6 flex flex-col">
         <div class="flex justify-between items-center pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
@@ -537,6 +584,7 @@
                 </div>
             </form>
         </div>
+        
     </div>
 
 

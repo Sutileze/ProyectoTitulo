@@ -1,0 +1,26 @@
+{# administrador/templates/administrador/aviso_confirmar_eliminar.html #}
+{% extends "administrador/base_admin.html" %}
+
+{% block title %}Eliminar Aviso{% endblock %}
+{% block nav_avisos_active %}active{% endblock %}
+
+{% block content %}
+<h2 class="h3 mb-3">Confirmar Eliminación</h2>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <p class="mb-4">
+            ¿Estás seguro de que deseas eliminar el aviso: <strong>"{{ aviso.titulo }}"</strong>?
+            Esta acción es irreversible.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash me-1"></i> Sí, Eliminar
+            </button>
+            <a href="{% url 'avisos_list' %}" class="btn btn-secondary ms-2">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

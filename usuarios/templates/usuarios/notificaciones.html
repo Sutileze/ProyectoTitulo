@@ -1,0 +1,98 @@
+{% load static %}
+{% load my_custom_filters %}
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Mis Notificaciones</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#005A9C",
+                "secondary": "#FF9800",
+                "background-light": "#F4F6F8",
+                "background-dark": "#101c22",
+                "text-light": "#333333",
+                "text-dark": "#F4F6F8",
+                "text-muted-light": "#666666",
+                "text-muted-dark": "#a0aec0",
+              },
+              fontFamily: {
+                "display": ["Work Sans", "sans-serif"],
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+    <div class="relative flex h-auto min-h-screen w-full flex-col">
+        
+        <header class="flex items-center justify-between bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-700 px-10 py-3 sticky top-0 z-50">
+            <h1 class="text-xl font-bold text-text-light dark:text-text-dark">Notificaciones de Administración</h1>
+            <a href="{% url 'plataforma_comerciante' %}" class="flex items-center text-text-muted-light dark:text-text-muted-dark hover:text-primary">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Volver a Plataforma
+            </a>
+        </header>
+
+        <main class="w-full max-w-screen-md mx-auto p-6 lg:p-8">
+            {% if messages %}
+                <div class="mb-6">
+                {% for message in messages %}
+                    <div class="p-3 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-300{% elif message.tags == 'success' %}bg-green-100 text-green-700 border border-green-300{% else %}bg-blue-100 text-blue-700 border border-blue-300{% endif %} mb-2">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="bg-white dark:bg-white rounded-xl shadow-lg border border-gray-200">
+                <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                    {% for notification in notifications %}
+                        <div class="p-4 flex items-start space-x-4 
+                            {% if notification.leido %} 
+                                bg-white dark:bg-background-dark text-text-muted-light 
+                            {% else %} 
+                                bg-primary/5 dark:bg-primary/10 font-semibold text-text-light 
+                            {% endif %}">
+                            
+                            <span class="material-symbols-outlined text-2xl 
+                                {% if notification.leido %}text-gray-400{% else %}text-primary{% endif %}">
+                                {{ notification.tipo|first_word_to_icon }}
+                            </span>
+
+                            <div class="flex-1">
+                                <p class="text-sm">
+                                    {{ notification.titulo }} 
+                                    {% if not notification.leido %}
+                                        <span class="text-red-500 text-xs ml-1">• Nuevo</span>
+                                    {% endif %}
+                                </p>
+                                <p class="text-xs mt-1 
+                                    {% if notification.leido %}text-text-muted-light{% else %}text-text-light{% endif %}">
+                                    {{ notification.contenido|truncatechars:100 }}
+                                </p>
+                                <p class="text-xs text-text-muted-light mt-1">
+                                    Vence: {{ notification.fecha_caducidad|default:"Sin caducidad"|date:"d M Y" }}
+                                </p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="p-6 text-center text-gray-500">No tienes notificaciones vigentes.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

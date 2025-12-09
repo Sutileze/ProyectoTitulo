@@ -54,3 +54,22 @@ def first_word_to_icon(value):
         return 'groups'
     else:
         return 'notifications_active' # Ícono por defecto
+
+def first_word_to_icon(value):
+    """Convierte la primera palabra del tipo de notificación en un icono Material Symbols."""
+    if not isinstance(value, str):
+        return 'notifications_active'
+        
+    word = value.lower().split()[0]
+    
+    # Mapeo basado en categorías de Aviso:
+    if 'capacitacion' in word:
+        return 'school'
+    elif 'evento' in word:
+        return 'event'
+    elif 'sorteo' in word or 'concurso' in word:
+        return 'emoji_events'
+    elif 'general' in word or 'aviso' in word:
+        return 'campaign' # Icono para avisos generales
+    else:
+        return 'notifications_active' # Icono por defecto

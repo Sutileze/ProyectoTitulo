@@ -8,21 +8,22 @@ from django.db.models import Count, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 import feedparser 
-from django.utils.html import strip_tags # Necesaria para fetch_news_preview
-from proveedor.models import Region, Comuna # RESTAURADO: Importación para filtros de región
+from django.utils.html import strip_tags 
+from proveedor.models import Region, Comuna 
 
 from .models import (
     Comerciante,
     Post,
-    # ELIMINADO: Like, NIVELES
     Comentario,
     INTERESTS_CHOICES,
     Proveedor,
     Propuesta,
     RUBROS_CHOICES,
-    Beneficio, # MANTENIDO: para la vista de beneficios
-    CATEGORIAS, # MANTENIDO: para la vista de beneficios
-    CATEGORIA_POST_CHOICES, # Importado para obtener todas
+    Beneficio,
+    CATEGORIAS,
+    CATEGORIA_POST_CHOICES,
+    Aviso,  # NUEVO IMPORT
+    AvisoLeido, # NUEVO IMPORT
 )
 from .forms import (
     RegistroComercianteForm,
@@ -35,8 +36,7 @@ from .forms import (
     ComentarioForm,
 )
 
-# --- Simulación de sesión global ---
-current_logged_in_user = None
+current_logged_in_user = None # Control de sesión global
 
 ROLES = {
     'COMERCIANTE': 'Comerciante Verificado',
@@ -45,8 +45,7 @@ ROLES = {
     'INVITADO': 'Invitado',
 }
 
-# --- DEFINICIÓN DE CATEGORÍAS SEPARADAS ---
-COMMUNITY_CATEGORIES = [
+COMMUNITY_CATEGORIES = [# --- DEFINICIÓN DE CATEGORÍAS SEPARADAS (para filtros de foro) ---
     ('DUDA', 'Duda / Pregunta'),
     ('OPINION', 'Opinión / Debate'),
     ('RECOMENDACION', 'Recomendación'),
@@ -60,23 +59,16 @@ ADMIN_CATEGORIES = [
     ('NUEVOS_SOCIOS', 'Nuevos socios'),
     ('ACTIVIDADES', 'Actividades en curso'),
 ]
-
-
 # --- Funciones helper ---
-
-# ELIMINADO: def calcular_nivel_y_progreso(puntos):
-
 def is_online(last_login):
+    """Verifica si el usuario estuvo activo en los últimos 5 minutos."""
     if not last_login:
         return False
     return (timezone.now() - last_login) < timedelta(minutes=5)
 
-
 # --- Autenticación y cuenta ---
-
 def index(request):
     return redirect('registro')
-
 
 def registro_view(request):
     if request.method == 'POST':
@@ -91,8 +83,6 @@ def registro_view(request):
             comuna_final = form.cleaned_data.get('comuna')
             if comuna_final:
                 nuevo_comerciante.comuna = comuna_final
-
-            # ELIMINADO: Inicialización de puntos y nivel
 
             try:
                 nuevo_comerciante.save()
@@ -113,8 +103,8 @@ def registro_view(request):
 
     return render(request, 'usuarios/cuenta.html', {'form': form})
 
-
 def login_view(request):
+    """Maneja el inicio de sesión y la redirección según el rol del usuario."""
     global current_logged_in_user
     
     if request.method == 'POST':
@@ -128,11 +118,7 @@ def login_view(request):
 
                 if check_password(password, comerciante.password_hash):
                     
-                    # ELIMINADO: Lógica de actualización de nivel/puntos
-                    
                     comerciante.ultima_conexion = timezone.now()
-                    
-                    # AJUSTADO: guardar sin nivel_actual ni puntos
                     comerciante.save(update_fields=['ultima_conexion']) 
                     
                     current_logged_in_user = comerciante
@@ -164,8 +150,8 @@ def login_view(request):
     contexto = {'form': form}
     return render(request, 'usuarios/cuenta.html', contexto)
 
-
 def logout_view(request):
+    """Cierra la sesión del usuario actual."""
     global current_logged_in_user
     if current_logged_in_user:
         messages.info(
@@ -175,10 +161,9 @@ def logout_view(request):
         current_logged_in_user = None
     return redirect('login')
 
-
 # --- Perfil ---
-
 def perfil_view(request):
+    """Muestra y maneja la edición del perfil del comerciante."""
     global current_logged_in_user
 
     if not current_logged_in_user:
@@ -187,8 +172,6 @@ def perfil_view(request):
 
     comerciante = current_logged_in_user
     
-    # ELIMINADO: Lógica de cálculo y actualización de nivel/puntos
-
     if request.method == 'POST':
         action = request.POST.get('action')
 
@@ -284,8 +267,6 @@ def perfil_view(request):
         'comerciante': comerciante,
         'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
         'nombre_negocio_display': comerciante.nombre_negocio,
-
-        # ELIMINADO: puntos/nivel del contexto
         'es_proveedor': comerciante.es_proveedor,
 
         'photo_form': photo_form,
@@ -299,10 +280,9 @@ def perfil_view(request):
 
     return render(request, 'usuarios/perfil.html', context)
 
-
 # --- Plataforma / Foro ---
-
 def plataforma_comerciante_view(request):
+    """Muestra el feed principal del foro, aplicando filtros de comunidad/admin y categoría."""
     global current_logged_in_user
 
     if not current_logged_in_user:
@@ -311,12 +291,12 @@ def plataforma_comerciante_view(request):
             'Por favor, inicia sesión para acceder a la plataforma.'
         )
         return redirect('login')
+
     posts_query = (
         Post.objects
         .select_related('comerciante')
         .annotate(
             comentarios_count=Count('comentarios', distinct=True),
-            # ELIMINADO: likes_count y is_liked
         )
         .prefetch_related(
             'comentarios',
@@ -324,59 +304,82 @@ def plataforma_comerciante_view(request):
         )
     )
 
-    # Lógica de filtrado de Administrador
+    # Lógica de filtrado por rol (Comunidad vs. Admin)
     tipo_filtro = request.GET.get('tipo_filtro', 'COMUNIDAD')
-    
+    posting_allowed = tipo_filtro != 'ADMIN'
+
     # 1. Definir opciones de categorías válidas según el filtro principal
     if tipo_filtro == 'ADMIN':
         posts_query = posts_query.filter(comerciante__rol='ADMIN')
-        category_options = ADMIN_CATEGORIES
-    else: # 'COMUNIDAD'
-        community_keys = [key for key, value in COMMUNITY_CATEGORIES]
-        posts_query = posts_query.filter(categoria__in=community_keys)
-        category_options = COMMUNITY_CATEGORIES
+        category_options_for_display = ADMIN_CATEGORIES
+        valid_post_keys = [key for key, value in ADMIN_CATEGORIES]
+        
+    else: # 'COMUNIDAD' (Filtrando la categoría 'NOTICIA del Sector' según tu solicitud)
+        # Filtra COMMUNITY_CATEGORIES para mostrar solo: dudas, opinion, recomendacion, general
+        community_options_filtered = [
+            (k, v) for k, v in COMMUNITY_CATEGORIES 
+            if k in ['DUDA', 'OPINION', 'RECOMENDACION', 'GENERAL'] # Excluye NOTICIA
+        ]
+        
+        valid_post_keys = [key for key, value in community_options_filtered]
+        posts_query = posts_query.filter(categoria__in=valid_post_keys)
+        category_options_for_display = community_options_filtered
 
     # 2. Aplicar filtro de subcategoría (Temas del Foro)
     categoria_filtros = request.GET.getlist('categoria', [])
     
-    # Obtener todas las claves válidas para el filtro actual
-    valid_categories_keys = [key for key, value in category_options]
-    
     if categoria_filtros and 'TODAS' not in categoria_filtros and 'TODOS' not in categoria_filtros:
-        # Si se seleccionan categorías específicas (que no sean 'TODAS')
+        # Si se seleccionan categorías específicas
         posts = posts_query.filter(
             categoria__in=categoria_filtros
         ).order_by('-fecha_publicacion')
     else:
-        # Si no hay filtro o se selecciona 'TODAS'
-        posts = posts_query.filter(categoria__in=valid_categories_keys).order_by('-fecha_publicacion')
-        if categoria_filtros and ('TODAS' in categoria_filtros or 'TODOS' in categoria_filtros):
-            categoria_filtros = ['TODAS'] # Para mantener el filtro 'Todas' resaltado
-
-    # 3. Restricción de publicación
+        # Si no hay filtro, muestra todos los posts de las categorías válidas
+        posts = posts_query.filter(categoria__in=valid_post_keys).order_by('-fecha_publicacion')
+        if not categoria_filtros or ('TODAS' in categoria_filtros or 'TODOS' in categoria_filtros):
+            categoria_filtros = ['TODOS']
+    # 3. Restricción de publicación (revisión de seguridad de front-end)
+    # 3. Restricción de publicación (revisión de seguridad de front-end)
     user_can_post = True
     if current_logged_in_user and current_logged_in_user.rol != 'ADMIN' and tipo_filtro == 'ADMIN':
-        # Un Comerciante o Proveedor no puede publicar en el feed de ADMIN
         user_can_post = False
-
-    # NUEVO: Carga de regiones para la barra lateral
+        
+    post_form_with_choices = PostForm(category_choices=category_options_for_display)
+    # --- Lógica de Avisos y Notificación ---
+    hoy = timezone.now().date()
+    
+    # A. Obtener el número de notificaciones no leídas para el icono de la campana
+    if current_logged_in_user:
+        avisos_no_leidos_count = Aviso.objects.filter(
+            Q(fecha_caducidad__isnull=True) | Q(fecha_caducidad__gte=hoy)
+        ).exclude(
+            lecturas__comerciante=current_logged_in_user
+        ).count()
+    else:
+        avisos_no_leidos_count = 0
+        
+    # B. Obtener los 5 avisos más recientes y vigentes para la sección de Avisos
+    top_avisos = Aviso.objects.filter(
+        Q(fecha_caducidad__isnull=True) | Q(fecha_caducidad__gte=hoy)
+    ).order_by('-fecha_creacion')[:5]
+        
+    # Carga de recursos externos
     try:
         regiones = Region.objects.all().order_by('nombre')
     except Exception:
-        regiones = [] # Retorna lista vacía si la tabla no existe o falla la importación
+        regiones = []
 
     top_posters = Comerciante.objects.annotate(
         post_count=Count('posts')
-    ).exclude(rol='ADMIN').order_by('-post_count')[:5] #
+    ).exclude(rol='ADMIN').order_by('-post_count')[:5]
 
     news_preview = fetch_news_preview() 
     context = {
         'comerciante': current_logged_in_user,
         'rol_usuario': ROLES.get(current_logged_in_user.rol, 'Usuario'),
-        'post_form': PostForm(),
+        'post_form': post_form_with_choices, # Pasamos el formulario con las opciones filtradas
         'posts': posts,
-        # Se pasa la lista completa de categorías al formulario de post y las separadas para los filtros
-        'CATEGORIA_POST_CHOICES': CATEGORIA_POST_CHOICES,
+        'CATEGORIA_POST_CHOICES': category_options_for_display, # Pasamos lista filtrada para sidebar
         'COMMUNITY_CATEGORIES': COMMUNITY_CATEGORIES,
         'ADMIN_CATEGORIES': ADMIN_CATEGORIES,
         'categoria_seleccionada': categoria_filtros,
@@ -386,15 +389,65 @@ def plataforma_comerciante_view(request):
             f'{current_logged_in_user.nombre_apellido.split()[0]}.'
         ),
         'tipo_filtro': tipo_filtro,
-        'regiones': regiones, # AÑADIDO al contexto
-        'user_can_post': user_can_post, # NUEVA VARIABLE DE CONTEXTO
-        'top_posters': top_posters,  # AÑADIDO: Lista de usuarios más activos
+        'regiones': regiones,
+        'user_can_post': user_can_post,
+        'top_posters': top_posters,
+        'posting_allowed': posting_allowed,
+        'top_avisos': top_avisos, # NUEVO: TOP 5 AVISOS VIGENTES
+        'avisos_no_leidos_count': avisos_no_leidos_count, # NUEVO: Contador de campana
     }
 
     return render(request, 'usuarios/plataforma_comerciante.html', context)
 
 
+# --- NUEVA VISTA DE NOTIFICACIONES ---
+def notificaciones_view(request):
+    """Muestra la lista de avisos del admin al comerciante, marcando los no leídos."""
+    global current_logged_in_user
+
+    if not current_logged_in_user:
+        messages.warning(request, 'Debes iniciar sesión para ver tus notificaciones.')
+        return redirect('login')
+
+    comerciante = current_logged_in_user
+    hoy = timezone.now().date()
+    
+    # 1. Obtener todos los avisos vigentes
+    avisos_vigentes_qs = Aviso.objects.filter(
+        Q(fecha_caducidad__isnull=True) | Q(fecha_caducidad__gte=hoy)
+    ).order_by('-fecha_creacion')
+
+    # 2. Anotar el estado de lectura para el usuario actual
+    notifications = avisos_vigentes_qs.annotate(
+        leido=Count('lecturas', filter=Q(lecturas__comerciante=comerciante))
+    ).order_by('leido', '-fecha_creacion') # No leídos primero (leido=0)
+
+    # 3. Marcar como leído si se accede a la lista (buena práctica UX)
+    #    Marcamos todos los avisos VIGENTES como leídos al cargar la lista.
+    for notification in notifications.filter(leido=0):
+        AvisoLeido.objects.get_or_create(aviso=notification, comerciante=comerciante)
+        
+    context = {
+        'comerciante': comerciante,
+        'notifications': notifications,
+    }
+    
+    return render(request, 'usuarios/notificaciones.html', context)
+
+
+def marcar_aviso_leido(request, aviso_id):
+    """Marca un aviso específico como leído para el usuario actual (usado en post/detalle)."""
+    if not current_logged_in_user:
+        return redirect('login')
+
+    aviso = get_object_or_404(Aviso, id=aviso_id)
+    AvisoLeido.objects.get_or_create(aviso=aviso, comerciante=current_logged_in_user)
+    
+    messages.success(request, f"Aviso '{aviso.titulo}' marcado como leído.")
+    return redirect('notificaciones')
+
 def publicar_post_view(request):
+    """Procesa el formulario de creación de un nuevo post."""
     global current_logged_in_user
 
     if request.method == 'POST':
@@ -402,9 +455,7 @@ def publicar_post_view(request):
             messages.error(request, 'Debes iniciar sesión para publicar.')
             return redirect('login')
         
-        # VALIDACIÓN ADICIONAL DE RESTRICCIÓN DE PUBLICACIÓN
-        # Si el usuario no es Admin y está intentando publicar una categoría de Admin, se le prohíbe.
-        # Esta validación es importante para reforzar la seguridad de la vista.
+        # VALIDACIÓN: Prohíbe a no-admins publicar en categorías de Admin
         is_admin_category = False
         for key, _ in ADMIN_CATEGORIES:
             if key == request.POST.get('categoria'):
@@ -453,6 +504,7 @@ def publicar_post_view(request):
     return redirect('plataforma_comerciante')
 
 def post_detail_view(request, post_id):
+    """Muestra el detalle de una publicación y sus comentarios."""
     global current_logged_in_user
 
     if not current_logged_in_user:
@@ -464,14 +516,13 @@ def post_detail_view(request, post_id):
         .select_related('comerciante')
         .annotate(
             comentarios_count=Count('comentarios', distinct=True),
-            # ELIMINADO: likes_count y is_liked
         ),
         pk=post_id
     )
 
     comentarios = post.comentarios.select_related(
         'comerciante'
-    ).all().order_by('fecha_creacion')
+    ).all().order_by('-fecha_creacion') # Comentarios de más nuevo a más antiguo
 
     context = {
         'comerciante': current_logged_in_user,
@@ -481,10 +532,10 @@ def post_detail_view(request, post_id):
     }
     return render(request, 'usuarios/post_detail.html', context)
 
-
 def add_comment_view(request, post_id):
-    global current_logged_in_user
-
+    """Procesa el formulario para añadir un nuevo comentario y redirige al detalle del post."""
+    
+    # Se asegura que el usuario esté logueado
     if not current_logged_in_user:
         messages.error(request, 'No autorizado para comentar. Inicia sesión.')
         return redirect('login')
@@ -505,15 +556,11 @@ def add_comment_view(request, post_id):
                 'Error al publicar el comentario. El contenido no puede estar vacío.'
             )
 
-    return redirect('plataforma_comerciante')
-
-
-# ELIMINADO: def like_post_view(request, post_id):
-
-
-# --- Beneficios (RESTAURADA) ---
+    # Redirige al detalle del post después de intentar publicar (éxito o error)
+    return redirect('post_detail', post_id=post.id)
 
 def beneficios_view(request):
+    """Muestra la lista de beneficios disponibles, con opciones de filtro."""
     global current_logged_in_user
 
     if not current_logged_in_user:
@@ -536,7 +583,7 @@ def beneficios_view(request):
     if category_filter and category_filter != 'TODOS':
         beneficios_queryset = beneficios_queryset.filter(categoria=category_filter)
 
-    # AJUSTADO: Eliminando opciones de ordenamiento por puntos
+    # Valida y aplica el ordenamiento
     valid_sort_fields = [
         'vence',
         '-vence',
@@ -553,9 +600,6 @@ def beneficios_view(request):
     context = {
         'comerciante': comerciante,
         'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
-
-        # ELIMINADO: puntos/niveles/progreso del contexto
-
         'beneficios': beneficios_queryset,
         'no_beneficios_disponibles': no_beneficios_disponibles,
         'CATEGORIAS': CATEGORIAS_CHOICES, 
@@ -565,11 +609,8 @@ def beneficios_view(request):
 
     return render(request, 'usuarios/beneficios.html', context)
 
-
-# --- Gestión de rol proveedor ---
-
-
 def proveedor_dashboard_view(request):
+    """Muestra el panel de control del proveedor (si el usuario es proveedor)."""
     global current_logged_in_user
 
     if not current_logged_in_user or not getattr(current_logged_in_user, 'es_proveedor', False):
@@ -590,13 +631,10 @@ def proveedor_dashboard_view(request):
 
     return render(request, 'proveedores/perfil.html', context)
 
-
-# --- Directorio de proveedores ---
-
 def directorio_view(request):
+    """Muestra el directorio de proveedores con opciones de búsqueda y filtro."""
     
     rubro_filter = request.GET.get('rubro', 'TODOS')
-    # AÑADIDO: Obtener filtro de región
     region_filter_id = request.GET.get('region') 
 
     propuestas_queryset = Propuesta.objects.select_related('proveedor').all()
@@ -606,21 +644,14 @@ def directorio_view(request):
             rubros_ofertados__icontains=rubro_filter
         )
     
-    # NUEVO: Lógica de filtrado por Región en el Directorio
     if region_filter_id and region_filter_id != '':
         try:
-            # Asumiendo que Proveedor tiene una FK a Region.
             propuestas_queryset = propuestas_queryset.filter(
                 proveedor__region__id=region_filter_id
             )
         except Exception:
-            # Si el modelo Proveedor no tiene la FK a Region (por si hubo errores de migración),
-            # simplemente se omite el filtro.
             pass
 
-
-    # ELIMINADO: zona_filter (Charfield) para usar region_filter (FK)
-    # y el sort_by (se simplifica la lógica)
     sort_by = request.GET.get('ordenar_por', 'proveedor__nombre') 
     valid_sort_fields = ['proveedor__nombre', '-proveedor__nombre']
     
@@ -629,9 +660,7 @@ def directorio_view(request):
     else:
         sort_by = 'proveedor__nombre'
         propuestas_queryset = propuestas_queryset.order_by(sort_by)
-        
 
-    # NUEVO: Carga de regiones para el contexto del directorio
     try:
         regiones = Region.objects.all().order_by('nombre')
     except Exception:
@@ -649,17 +678,17 @@ def directorio_view(request):
             'La Reina',
         ],
         'current_rubro': rubro_filter,
-        'current_zona': region_filter_id, # Usamos la ID de región seleccionada aquí
+        'current_zona': region_filter_id, 
         'current_sort': sort_by,
         'comerciante': current_logged_in_user,
-        'regiones': regiones, # AÑADIDO para el filtro
+        'regiones': regiones,
         'region_seleccionada': region_filter_id,
     }
 
     return render(request, 'usuarios/directorio.html', context)
 
-
 def proveedor_perfil_view(request, pk):
+    """Muestra el perfil público detallado de un proveedor."""
     proveedor = get_object_or_404(Proveedor, pk=pk)
 
     is_online_status = is_online(proveedor.ultima_conexion)
@@ -690,10 +719,7 @@ from soporte.forms import TicketSoporteForm
 from django.utils.html import strip_tags
 
 def crear_ticket_soporte(request):
-    """
-    Vista para que un COMERCIANTE cree un ticket de soporte.
-    Usa current_logged_in_user (no Django auth).
-    """
+    """Vista para que un COMERCIANTE cree un ticket de soporte."""
     comerciante = current_logged_in_user
     if not comerciante:
         messages.error(request, "Debes iniciar sesión para crear un ticket de soporte.")
@@ -724,9 +750,8 @@ RSS_FEEDS = {
     }
 }
 
-
 def noticias_view(request):
-    """Implementa el feed RSS con una fuente única estable."""
+    """Muestra noticias del sector a partir de un feed RSS estable."""
     global current_logged_in_user
 
     if not current_logged_in_user:
@@ -737,7 +762,6 @@ def noticias_view(request):
     
     noticias = []
     
-    # Aquí seleccionamos la única fuente disponible y estable: GOOGLE_NEWS
     source_key = 'ESTABLE'
     source = RSS_FEEDS[source_key] 
     
@@ -745,12 +769,10 @@ def noticias_view(request):
     feed_url = source['url']
 
     try:
-        # 2. Parseo del RSS
         feed = feedparser.parse(feed_url)
         
-        # 3. Extraer noticias (limitadas a 15 para buen rendimiento)
+        # Extraer noticias (limitadas a 15 para buen rendimiento)
         for entry in getattr(feed, 'entries', [])[:15]: 
-            # Usamos try-except interno para manejar entradas corruptas
             try:
                 fecha_str = entry.get('published', entry.get('updated', 'Fecha no disponible'))
                 
@@ -759,13 +781,12 @@ def noticias_view(request):
                     'link': entry.link,
                     'fecha': fecha_str,
                     'resumen': entry.get('summary', entry.get('description', 'Contenido no disponible')), 
-                    'source_key': source_key # Usamos la clave única para el color
+                    'source_key': source_key
                 })
             except Exception:
                 continue 
 
     except Exception:
-        # Si la conexión falla, se retorna una lista vacía.
         noticias = []
         feed_title = "Fallo de Conexión"
     
@@ -778,9 +799,8 @@ def noticias_view(request):
     
     return render(request, 'usuarios/noticias.html', context)
 
-
 def redes_sociales_view(request):
-    """Restaura la vista que estaba dando AttributeError en urls.py."""
+    """Muestra enlaces a las redes sociales y canales oficiales."""
     global current_logged_in_user
 
     if not current_logged_in_user:
@@ -796,7 +816,7 @@ def redes_sociales_view(request):
 
 # --- FUNCIÓN AUXILIAR PARA OBTENER EL PREVIEW DE NOTICIAS ---
 def fetch_news_preview():
-    # Usamos la única fuente estable definida globalmente en RSS_FEEDS
+    """Obtiene un extracto de noticias del feed estable para mostrar en la plataforma."""
     try:
         stable_source = RSS_FEEDS['ESTABLE'] 
         feed = feedparser.parse(stable_source['url'])
@@ -810,8 +830,4 @@ def fetch_news_preview():
             })
         return preview_news
     except Exception:
-        # En caso de fallo, retorna una lista vacía para que el template use el fallback
         return []
-    
-
-    

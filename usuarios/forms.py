@@ -83,6 +83,17 @@ class LoginForm(forms.Form):
 
 # -------------------------------------------------------------------------------------
 class PostForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        # Extrae las opciones de categoría pasadas desde la vista
+        category_choices = kwargs.pop('category_choices', None)
+        
+        super().__init__(*args, **kwargs)
+        
+        # Si se proporcionan opciones dinámicas, sobrescribe las opciones del modelo
+        if category_choices is not None:
+            self.fields['categoria'].choices = category_choices
+
     # Campo para subida de archivo desde PC (NUEVA FUNCIONALIDAD)
     uploaded_file = forms.FileField(
         required=False,

@@ -19,4 +19,8 @@ urlpatterns = [
     path('posts/crear/', views.crear_post_admin_view, name='crear_post_admin'),
     path('posts/editar/<int:post_id>/', views.editar_post_admin_view, name='editar_post_admin'),
     path('posts/eliminar/<int:post_id>/', views.eliminar_post_admin_view, name='eliminar_post_admin'),
+    path('avisos/', views.avisos_list_view, name='avisos_list'),
+    path('avisos/crear/', views.aviso_create_view, name='aviso_create'),
+    path('avisos/editar/<int:pk>/', views.aviso_update_view, name='aviso_update'),
+    path('avisos/eliminar/<int:pk>/', views.aviso_delete_view, name='aviso_delete'),
 ]

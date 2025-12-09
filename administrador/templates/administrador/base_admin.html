@@ -89,7 +89,14 @@
                             <i class="bi bi-chat-left-text me-2"></i> Publicaciones
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% block nav_avisos_active %}{% endblock %}" 
+                            href="{% url 'avisos_list' %}">
+                            <i class="bi bi-megaphone me-2"></i> Gestión de Avisos
+                        </a>
+                    </li>
                 </ul>
+                
 
                 <div class="mt-auto">
                     <a href="{% url 'plataforma_comerciante' %}" class="btn btn-outline-secondary w-100 mb-2">

@@ -6,6 +6,8 @@ from .models import (
     Beneficio,
     Proveedor,
     Propuesta,
+    Aviso,  # NUEVO
+    AvisoLeido,
 )
 
 
@@ -72,3 +74,20 @@ class PropuestaAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'proveedor', 'zona_geografica')
     list_filter = ('zona_geografica',)
     search_fields = ('titulo', 'proveedor__nombre', 'rubros_ofertados')
+
+class AvisoAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'tipo', 'fecha_caducidad', 'fecha_creacion', 'is_vigente')
+    list_filter = ('tipo', 'fecha_caducidad')
+    search_fields = ('titulo', 'contenido')
+    readonly_fields = ('fecha_creacion',)
+    
+    def is_vigente(self, obj):
+        return obj.is_vigente()
+    is_vigente.boolean = True
+    is_vigente.short_description = 'Vigente'
+
+@admin.register(AvisoLeido)
+class AvisoLeidoAdmin(admin.ModelAdmin):
+    list_display = ('aviso', 'comerciante', 'fecha_lectura')
+    search_fields = ('aviso__titulo', 'comerciante__nombre_apellido')
+    list_filter = ('aviso__tipo',)
