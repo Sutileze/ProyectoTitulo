@@ -1,0 +1,296 @@
+{% extends 'proveedores/base.html' %}
+{% load static %}
+
+{% block title %}Iniciar Sesión - Proveedores | Club Almacén{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+
+    .auth-card {
+        background: var(--bg-primary);
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        max-width: 480px;
+        width: 100%;
+        padding: 3rem 2.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    body.dark-mode .auth-card {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .auth-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+    }
+
+    .auth-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(0, 149, 255, 0.1);
+    }
+
+    .form-control.error {
+        border-color: #dc3545;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-top: 0.5rem;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-submit:active {
+        transform: translateY(0);
+    }
+
+    .forgot-password {
+        text-align: right;
+        margin-top: 0.75rem;
+    }
+
+    .forgot-password a {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: opacity 0.2s;
+    }
+
+    .forgot-password a:hover {
+        opacity: 0.8;
+        text-decoration: underline;
+    }
+
+    .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 2rem 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .divider::before,
+    .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .divider span {
+        padding: 0 1rem;
+    }
+
+    .register-link {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .register-link a {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: 600;
+        transition: opacity 0.2s;
+    }
+
+    .register-link a:hover {
+        opacity: 0.8;
+        text-decoration: underline;
+    }
+
+    .info-badge {
+        background: rgba(0, 149, 255, 0.1);
+        border: 1px solid rgba(0, 149, 255, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .info-badge-icon {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .info-badge-text {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 640px) {
+        .auth-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">
+                🏢
+            </div>
+            <h1 class="auth-title">Portal de Proveedores</h1>
+            <p class="auth-subtitle">Ingresa a tu cuenta para gestionar tu negocio</p>
+        </div>
+
+        <form method="POST" action="{% url 'proveedores:login_proveedor' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_email" class="form-label">
+                    Correo electrónico
+                </label>
+                <input 
+                    type="email" 
+                    name="email" 
+                    id="id_email"
+                    class="form-control {% if form.email.errors %}error{% endif %}"
+                    placeholder="proveedor@empresa.com"
+                    value="{{ form.email.value|default:'' }}"
+                    required
+                >
+                {% if form.email.errors %}
+                    {% for error in form.email.errors %}
+                        <div class="error-message">
+                            <span>⚠</span> {{ error }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_password" class="form-label">
+                    Contraseña
+                </label>
+                <input 
+                    type="password" 
+                    name="password" 
+                    id="id_password"
+                    class="form-control {% if form.password.errors %}error{% endif %}"
+                    placeholder="••••••••"
+                    required
+                >
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <div class="error-message">
+                            <span>⚠</span> {{ error }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="forgot-password">
+                <a href="#">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                Iniciar Sesión
+            </button>
+        </form>
+
+        <div class="info-badge">
+            <div class="info-badge-icon">💡</div>
+            <div class="info-badge-text">
+                <strong>Portal exclusivo para proveedores.</strong> Si eres un comerciante, 
+                <a href="{% url 'registro' %}" style="color: var(--accent-color); text-decoration: underline;">inicia sesión aquí</a>.
+            </div>
+        </div>
+
+        <div class="register-link">
+            ¿No tienes cuenta? 
+            <a href="{% url 'proveedores:registro_proveedor' %}">Regístrate como proveedor</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,17 +1,13 @@
-# proveedores/views.py (CÓDIGO REVISADO, COMPLETO Y FINAL CON MANEJO DE ERRORES)
-
+# proveedores/views.py
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.hashers import check_password, make_password
 from django.db.models import Q
 from django.core.paginator import Paginator
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.utils import timezone
-from django.db import transaction
-from django.views.decorators.http import require_POST, require_GET
-
-from usuarios import views as usuarios_views   # si defines current_logged_in_user aquí
-from usuarios.models import Comerciante
+from django.db import IntegrityError
+from django.views.decorators.http import require_POST
 
 from .models import (
     Proveedor,
@@ -19,98 +15,126 @@ from .models import (
     ProductoServicio,
     Promocion,
     CategoriaProveedor,
-    Pais,
-    Region,
-    Comuna
+    PAISES_CHOICES,
+    REGIONES_CHOICES,
+    COMUNAS_CHOICES,
+    REGIONES_POR_PAIS,
+    COMUNAS_POR_REGION,
 )
 from .forms import (
+    LoginProveedorForm,
+    RegistroProveedorForm,
     ProveedorForm,
     ProductoServicioForm,
     PromocionForm,
     SolicitudContactoForm,
-    ConfiguracionForm
 )
+from .decorators import proveedor_login_required
+
+# Variable global para el proveedor actual
+current_logged_in_proveedor = None
 
 
-# -----------------------
-# Helpers
-# -----------------------
-def _get_comerciante_from_request(request):
-    """
-    Intentar obtener el Comerciante en el siguiente orden:
-    1) usuarios_views.current_logged_in_user (si existe y no es None)
-    2) request.user.comerciante (atributo relacional común)
-    3) buscar en la tabla Comerciante por email del usuario (fallback no intrusivo)
-    Devuelve None si no se encuentra.
-    """
-    # 1) preferimos el helper externo si lo provees
-    try:
-        if hasattr(usuarios_views, "current_logged_in_user") and usuarios_views.current_logged_in_user:
-            return usuarios_views.current_logged_in_user
-    except Exception:
-        # no queremos que un fallo en usuarios_views rompa todo
-        pass
+# ==================== AUTENTICACIÓN ====================
 
-    # 2) intentar atributo directo en user
-    user = getattr(request, "user", None)
-    if user and user.is_authenticated:
-        # intento habitual: request.user.comerciante
-        comerciante = getattr(user, "comerciante", None)
-        if comerciante:
-            return comerciante
-
-        # fallback: intentar buscar por email (solo si existe email)
-        email = getattr(user, "email", None)
-        if email:
+def login_proveedor_view(request):
+    """Vista de login para proveedores"""
+    global current_logged_in_proveedor
+    
+    if request.method == 'POST':
+        form = LoginProveedorForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email'].lower()
+            password = form.cleaned_data['password']
+            
             try:
-                return Comerciante.objects.filter(email__iexact=email).first()
-            except Exception:
-                pass
+                proveedor = Proveedor.objects.get(email=email)
+                
+                if check_password(password, proveedor.password_hash):
+                    proveedor.ultima_conexion = timezone.now()
+                    proveedor.save(update_fields=['ultima_conexion'])
+                    
+                    current_logged_in_proveedor = proveedor
+                    messages.success(request, f'¡Bienvenido {proveedor.nombre_empresa}!')
+                    
+                    return redirect('proveedores:dashboard_proveedor')
+                else:
+                    messages.error(request, 'Contraseña incorrecta.')
+                    
+            except Proveedor.DoesNotExist:
+                messages.error(request, 'Este correo no está registrado como proveedor.')
+        else:
+            messages.error(request, 'Por favor, completa todos los campos.')
+    else:
+        form = LoginProveedorForm()
+    
+    return render(request, 'proveedores/login.html', {'form': form})
 
-    return None
+
+def registro_proveedor_view(request):
+    """Vista de registro para proveedores"""
+    if request.method == 'POST':
+        form = RegistroProveedorForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                raw_password = form.cleaned_data.pop('password')
+                form.cleaned_data.pop('confirm_password')
+                
+                proveedor = form.save(commit=False)
+                proveedor.password_hash = make_password(raw_password)
+                proveedor.save()
+                
+                messages.success(request, '¡Registro exitoso! Ya puedes iniciar sesión.')
+                return redirect('proveedores:login_proveedor')
+                
+            except IntegrityError:
+                messages.error(request, 'Este correo ya está registrado.')
+            except Exception as e:
+                messages.error(request, f'Error al crear la cuenta: {e}')
+        else:
+            # Mostrar errores específicos del formulario
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = RegistroProveedorForm()
+    
+    return render(request, 'proveedores/registro.html', {'form': form})
 
 
-def _get_proveedor_for_user(request):
-    """
-    Intenta devolver el Proveedor relacionado con el usuario/comerciante.
-    Maneja exceptions y devuelve (proveedor, error_msg) donde error_msg es None si todo ok.
-    """
-    comerciante = _get_comerciante_from_request(request)
-    if not comerciante:
-        return None, "Debes iniciar sesión como comerciante."
-
-    try:
-        proveedor = Proveedor.objects.get(usuario=comerciante)
-        return proveedor, None
-    except Proveedor.DoesNotExist:
-        return None, "Debes crear primero un perfil de proveedor."
+def logout_proveedor_view(request):
+    """Vista de logout para proveedores"""
+    global current_logged_in_proveedor
+    current_logged_in_proveedor = None
+    messages.success(request, 'Has cerrado sesión exitosamente.')
+    return redirect('proveedores:login_proveedor')
 
 
 # ==================== VISTAS PÚBLICAS ====================
 
 def directorio_proveedores(request):
-    """
-    Vista del directorio público de proveedores con filtros
-    """
-    proveedores = Proveedor.objects.filter(activo=True).select_related(
-        'pais', 'region', 'comuna'
-    ).prefetch_related('categorias')
+    """Vista del directorio público de proveedores con filtros"""
+    proveedores = Proveedor.objects.filter(activo=True).prefetch_related('categorias')
 
     # Filtros desde GET
     categoria_id = request.GET.get('categoria')
-    region_id = request.GET.get('region')
-    comuna_id = request.GET.get('comuna')
+    pais = request.GET.get('pais')
+    region = request.GET.get('region')
+    comuna = request.GET.get('comuna')
     cobertura = request.GET.get('cobertura')
     busqueda = request.GET.get('q')
 
     if categoria_id:
         proveedores = proveedores.filter(categorias__id=categoria_id)
 
-    if region_id:
-        proveedores = proveedores.filter(region_id=region_id)
+    if pais:
+        proveedores = proveedores.filter(pais=pais)
 
-    if comuna_id:
-        proveedores = proveedores.filter(comuna_id=comuna_id)
+    if region:
+        proveedores = proveedores.filter(region=region)
+
+    if comuna:
+        proveedores = proveedores.filter(comuna=comuna)
 
     if cobertura:
         proveedores = proveedores.filter(cobertura=cobertura)
@@ -131,15 +155,19 @@ def directorio_proveedores(request):
 
     # Datos para filtros
     categorias = CategoriaProveedor.objects.filter(activo=True)
-    regiones = Region.objects.all()
+    coberturas = Proveedor.COBERTURA_CHOICES
 
     context = {
         'page_obj': page_obj,
         'categorias': categorias,
-        'regiones': regiones,
+        'paises': PAISES_CHOICES,
+        'regiones': REGIONES_CHOICES,
+        'comunas': COMUNAS_CHOICES,
+        'coberturas': coberturas,
         'categoria_seleccionada': categoria_id,
-        'region_seleccionada': region_id,
-        'comuna_seleccionada': comuna_id,
+        'pais_seleccionado': pais,
+        'region_seleccionada': region,
+        'comuna_seleccionada': comuna,
         'cobertura_seleccionada': cobertura,
         'busqueda': busqueda,
     }
@@ -148,21 +176,17 @@ def directorio_proveedores(request):
 
 
 def detalle_proveedor(request, proveedor_id):
-    """
-    Vista del perfil público del proveedor
-    """
+    """Vista del perfil público del proveedor"""
     proveedor = get_object_or_404(
-        Proveedor.objects.select_related('pais', 'region', 'comuna').prefetch_related('categorias'),
+        Proveedor.objects.prefetch_related('categorias'),
         id=proveedor_id,
         activo=True
     )
 
-    # Incrementar visitas: envolver en try/except por si el método falla
+    # Incrementar visitas
     try:
-        if hasattr(proveedor, "incrementar_visitas"):
-            proveedor.incrementar_visitas()
+        proveedor.incrementar_visitas()
     except Exception:
-        # no interrumpir la vista por fallo en contador
         pass
 
     # Productos y servicios del proveedor
@@ -189,21 +213,21 @@ def detalle_proveedor(request, proveedor_id):
     return render(request, 'proveedores/detalle.html', context)
 
 
-# ==================== VISTAS DEL PERFIL DEL PROVEEDOR ====================
+# ==================== PANEL DEL PROVEEDOR ====================
 
-@login_required
-def perfil_proveedor(request):
-    """
-    Panel de control del proveedor.
-    Usa el Comerciante obtenido por helper para evitar inconsistencias.
-    """
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+@proveedor_login_required
+def dashboard_proveedor(request):
+    """Dashboard del proveedor"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
     # Estadísticas
     total_productos = ProductoServicio.objects.filter(proveedor=proveedor).count()
+    productos_activos = ProductoServicio.objects.filter(proveedor=proveedor, activo=True).count()
 
     hoy = timezone.now().date()
     promociones_activas = Promocion.objects.filter(
@@ -218,86 +242,55 @@ def perfil_proveedor(request):
         estado='pendiente'
     ).count()
 
+    # Productos recientes
+    productos_recientes = ProductoServicio.objects.filter(
+        proveedor=proveedor
+    ).order_by('-fecha_creacion')[:5]
+
+    # Promociones próximas a vencer
+    promociones_proximas = Promocion.objects.filter(
+        proveedor=proveedor,
+        activo=True,
+        fecha_fin__gte=hoy
+    ).order_by('fecha_fin')[:5]
+
     context = {
         'proveedor': proveedor,
         'total_productos': total_productos,
+        'productos_activos': productos_activos,
         'promociones_activas': promociones_activas,
         'solicitudes_pendientes': solicitudes_pendientes,
+        'productos_recientes': productos_recientes,
+        'promociones_proximas': promociones_proximas,
     }
-    return render(request, 'proveedores/perfil.html', context)
+    return render(request, 'proveedores/dashboard.html', context)
 
 
-@login_required
-def crear_perfil_proveedor(request):
-    """
-    Crear perfil de proveedor ligado al Comerciante
-    """
-    comerciante = _get_comerciante_from_request(request)
-    if not comerciante:
-        messages.error(request, "Debes iniciar sesión como comerciante.")
-        return redirect('login')
-
-    # Evitar duplicar perfil
-    if Proveedor.objects.filter(usuario=comerciante).exists():
-        messages.info(request, "Ya tienes un perfil de proveedor.")
-        return redirect('proveedores:perfil_proveedor')
-
-    if request.method == 'POST':
-        form = ProveedorForm(request.POST, request.FILES)
-        if form.is_valid():
-            try:
-                with transaction.atomic():
-                    proveedor = form.save(commit=False)
-                    proveedor.usuario = comerciante
-                    # Si el formulario no trae email, tomar el del comerciante
-                    proveedor.email = proveedor.email or getattr(comerciante, 'email', '')
-                    proveedor.whatsapp = proveedor.whatsapp or getattr(comerciante, 'whatsapp', '') or ""
-                    proveedor.save()
-                    form.save_m2m()
-
-                    # Marcar campo es_proveedor si existe en Comerciante
-                    if hasattr(comerciante, "es_proveedor"):
-                        comerciante.es_proveedor = True
-                        comerciante.save(update_fields=["es_proveedor"])
-
-                    messages.success(
-                        request,
-                        "¡Perfil de proveedor creado exitosamente! Ahora puedes gestionar tu negocio."
-                    )
-                    return redirect('proveedores:perfil_proveedor')
-            except Exception as e:
-                messages.error(request, f"Error al crear perfil: {e}")
-        else:
-            messages.error(request, "Hay errores en el formulario. Revisa los campos.")
-    else:
-        # Precargar algunos datos desde Comerciante (si existen)
-        initial = {
-            "nombre_empresa": getattr(comerciante, "nombre_negocio", None) or getattr(comerciante, "nombre_apellido", None) or getattr(comerciante, "nombre", ""),
-            "whatsapp": getattr(comerciante, "whatsapp", "") or "",
-            "email": getattr(comerciante, "email", "") or ""
-        }
-        form = ProveedorForm(initial=initial)
-
-    return render(request, 'proveedores/crear_perfil.html', {'form': form})
-
-
-@login_required
+@proveedor_login_required
 def editar_perfil_proveedor(request):
-    """
-    Editar perfil del proveedor
-    """
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Editar perfil del proveedor"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
     if request.method == 'POST':
         form = ProveedorForm(request.POST, request.FILES, instance=proveedor)
         if form.is_valid():
             try:
-                form.save()
+                # Guardar el formulario
+                proveedor_actualizado = form.save()
+                
+                # CRÍTICO: Refrescar desde la base de datos para obtener todos los campos actualizados
+                proveedor_actualizado.refresh_from_db()
+                
+                # CRÍTICO: Actualizar la variable global con los datos frescos
+                current_logged_in_proveedor = proveedor_actualizado
+                
                 messages.success(request, "Perfil actualizado exitosamente.")
-                return redirect('proveedores:perfil_proveedor')
+                return redirect('proveedores:editar_perfil_proveedor')  # Redirige a la misma página para ver los cambios
             except Exception as e:
                 messages.error(request, f"Error al guardar: {e}")
         else:
@@ -309,63 +302,66 @@ def editar_perfil_proveedor(request):
     return render(request, 'proveedores/editar_perfil.html', context)
 
 
-# ==================== GESTIÓN DE PRODUCTOS/SERVICIOS ====================
+# ==================== GESTIÓN DE PRODUCTOS ====================
 
-@login_required
+@proveedor_login_required
 def lista_productos(request):
-    """
-    Lista de productos del proveedor con filtros funcionales
-    """
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Lista de productos del proveedor"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
     productos = ProductoServicio.objects.filter(proveedor=proveedor)
 
-    categoria_choices = getattr(ProductoServicio, 'CATEGORIA_CHOICES', [])
-
     # Filtros
-    categoria_actual = request.GET.get('categoria', '')
-    if categoria_actual:
-        productos = productos.filter(categoria=categoria_actual)
+    categoria = request.GET.get('categoria', '')
+    if categoria:
+        productos = productos.filter(categoria=categoria)
 
-    estado_actual = request.GET.get('estado', '')
-    if estado_actual == 'activo':
+    estado = request.GET.get('estado', '')
+    if estado == 'activo':
         productos = productos.filter(activo=True)
-    elif estado_actual == 'inactivo':
+    elif estado == 'inactivo':
         productos = productos.filter(activo=False)
 
-    buscar_actual = request.GET.get('buscar', '')
-    if buscar_actual:
+    buscar = request.GET.get('buscar', '')
+    if buscar:
         productos = productos.filter(
-            Q(nombre__icontains=buscar_actual) |
-            Q(descripcion__icontains=buscar_actual)
+            Q(nombre__icontains=buscar) |
+            Q(descripcion__icontains=buscar)
         )
 
-    productos = productos.order_by('-id')
+    productos = productos.order_by('-destacado', '-fecha_creacion')
+
+    # Paginación
+    paginator = Paginator(productos, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
         'proveedor': proveedor,
-        'productos': productos,
-        'categoria_actual': categoria_actual,
-        'estado_actual': estado_actual,
-        'buscar_actual': buscar_actual,
-        'opciones_categoria': categoria_choices,
+        'page_obj': page_obj,
+        'categoria_actual': categoria,
+        'estado_actual': estado,
+        'buscar_actual': buscar,
+        'opciones_categoria': ProductoServicio.CATEGORIA_CHOICES,
     }
 
     return render(request, 'proveedores/productos/lista.html', context)
 
 
-@login_required
+@proveedor_login_required
 def crear_producto(request):
-    """
-    Crear nuevo producto/servicio
-    """
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Crear nuevo producto/servicio"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
     if request.method == 'POST':
         form = ProductoServicioForm(request.POST, request.FILES)
@@ -374,150 +370,122 @@ def crear_producto(request):
                 producto = form.save(commit=False)
                 producto.proveedor = proveedor
                 producto.save()
-                messages.success(request, '✅ Producto/servicio creado exitosamente.')
+                messages.success(request, 'Producto/servicio creado exitosamente.')
                 return redirect('proveedores:lista_productos')
             except Exception as e:
                 messages.error(request, f"Error al crear producto: {e}")
         else:
-            messages.error(request, "Hay errores en el formulario. Revisa los campos.")
+            messages.error(request, "Hay errores en el formulario.")
     else:
         form = ProductoServicioForm()
 
-    context = {
-        'form': form,
-        'proveedor': proveedor
-    }
+    context = {'form': form, 'proveedor': proveedor}
     return render(request, 'proveedores/productos/crear.html', context)
 
 
-@login_required
+@proveedor_login_required
 def editar_producto(request, producto_id):
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Editar producto/servicio"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
-    producto = get_object_or_404(
-        ProductoServicio,
-        id=producto_id,
-        proveedor=proveedor
-    )
+    producto = get_object_or_404(ProductoServicio, id=producto_id, proveedor=proveedor)
 
     if request.method == 'POST':
         form = ProductoServicioForm(request.POST, request.FILES, instance=producto)
         if form.is_valid():
             try:
                 form.save()
-                messages.success(request, 'Producto/servicio actualizado exitosamente.')
+                messages.success(request, 'Producto actualizado exitosamente.')
                 return redirect('proveedores:lista_productos')
             except Exception as e:
-                messages.error(request, f"Error al actualizar: {e}")
+                messages.error(request, f"Error: {e}")
         else:
-            messages.error(request, "Hay errores en el formulario. Revisa los campos.")
+            messages.error(request, "Hay errores en el formulario.")
     else:
         form = ProductoServicioForm(instance=producto)
 
-    context = {'form': form, 'producto': producto}
+    context = {'form': form, 'producto': producto, 'proveedor': proveedor}
     return render(request, 'proveedores/productos/editar.html', context)
 
 
-@login_required
+@proveedor_login_required
 @require_POST
 def eliminar_producto(request, producto_id):
-    """
-    Solo POST: elimina permanentemente un producto
-    """
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Eliminar producto/servicio"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        return redirect('proveedores:login_proveedor')
 
-    producto = get_object_or_404(
-        ProductoServicio,
-        id=producto_id,
-        proveedor=proveedor
-    )
+    producto = get_object_or_404(ProductoServicio, id=producto_id, proveedor=proveedor)
 
-    nombre_producto = producto.nombre
     try:
+        nombre = producto.nombre
         producto.delete()
-        messages.success(request, f'✅ Producto "{nombre_producto}" eliminado permanentemente.')
+        messages.success(request, f'Producto "{nombre}" eliminado exitosamente.')
     except Exception as e:
-        messages.error(request, f'Error al eliminar producto: {e}')
+        messages.error(request, f'Error al eliminar: {e}')
 
     return redirect('proveedores:lista_productos')
 
-
 # ==================== GESTIÓN DE PROMOCIONES ====================
 
-@login_required
+@proveedor_login_required
 def lista_promociones(request):
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Lista de promociones del proveedor"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
-    promociones = Promocion.objects.filter(proveedor=proveedor)
+    promociones = Promocion.objects.filter(proveedor=proveedor).order_by('-fecha_inicio')
 
-    estado = request.GET.get('estado', '')
-    if estado == 'activas':
-        promociones = promociones.filter(activo=True)
-    elif estado == 'inactivas':
-        promociones = promociones.filter(activo=False)
-
-    vigencia = request.GET.get('vigencia', '')
+    # Filtros
+    estado_filter = request.GET.get('estado', '')
     hoy = timezone.now().date()
-
-    if vigencia == 'vigentes':
+    
+    if estado_filter == 'activas':
         promociones = promociones.filter(
             activo=True,
             fecha_inicio__lte=hoy,
             fecha_fin__gte=hoy
         )
-    elif vigencia == 'programadas':
-        promociones = promociones.filter(
-            activo=True,
-            fecha_inicio__gt=hoy
-        )
-    elif vigencia == 'vencidas':
+    elif estado_filter == 'proximas':
+        promociones = promociones.filter(fecha_inicio__gt=hoy)
+    elif estado_filter == 'vencidas':
         promociones = promociones.filter(fecha_fin__lt=hoy)
 
-    buscar = request.GET.get('buscar', '')
-    if buscar:
-        promociones = promociones.filter(
-            Q(titulo__icontains=buscar) |
-            Q(descripcion__icontains=buscar)
-        )
-
-    fecha_desde = request.GET.get('fecha_desde', '')
-    fecha_hasta = request.GET.get('fecha_hasta', '')
-
-    if fecha_desde:
-        promociones = promociones.filter(fecha_inicio__gte=fecha_desde)
-
-    if fecha_hasta:
-        promociones = promociones.filter(fecha_fin__lte=fecha_hasta)
-
-    promociones = promociones.order_by('-fecha_inicio')
+    # Paginación
+    paginator = Paginator(promociones, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'promociones': promociones,
+        'page_obj': page_obj,
         'proveedor': proveedor,
-        'estado_actual': estado,
-        'vigencia_actual': vigencia,
-        'buscar_actual': buscar,
-        'fecha_desde_actual': fecha_desde,
-        'fecha_hasta_actual': fecha_hasta,
+        'estado_filter': estado_filter,
+        'hoy': hoy,
     }
-
     return render(request, 'proveedores/promociones/lista.html', context)
 
 
-@login_required
+@proveedor_login_required
 def crear_promocion(request):
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Crear nueva promoción"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
     if request.method == 'POST':
         form = PromocionForm(request.POST, request.FILES)
@@ -529,28 +497,27 @@ def crear_promocion(request):
                 messages.success(request, 'Promoción creada exitosamente.')
                 return redirect('proveedores:lista_promociones')
             except Exception as e:
-                messages.error(request, f"Error al crear promoción: {e}")
+                messages.error(request, f"Error: {e}")
         else:
-            messages.error(request, "Hay errores en el formulario. Revisa los campos.")
+            messages.error(request, "Hay errores en el formulario.")
     else:
         form = PromocionForm()
 
-    context = {'form': form}
+    context = {'form': form, 'proveedor': proveedor}
     return render(request, 'proveedores/promociones/crear.html', context)
 
 
-@login_required
+@proveedor_login_required
 def editar_promocion(request, promocion_id):
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Editar promoción"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
-    promocion = get_object_or_404(
-        Promocion,
-        id=promocion_id,
-        proveedor=proveedor
-    )
+    promocion = get_object_or_404(Promocion, id=promocion_id, proveedor=proveedor)
 
     if request.method == 'POST':
         form = PromocionForm(request.POST, request.FILES, instance=promocion)
@@ -560,51 +527,49 @@ def editar_promocion(request, promocion_id):
                 messages.success(request, 'Promoción actualizada exitosamente.')
                 return redirect('proveedores:lista_promociones')
             except Exception as e:
-                messages.error(request, f"Error al actualizar promoción: {e}")
+                messages.error(request, f"Error: {e}")
         else:
-            messages.error(request, "Hay errores en el formulario. Revisa los campos.")
+            messages.error(request, "Hay errores en el formulario.")
     else:
         form = PromocionForm(instance=promocion)
 
-    context = {'form': form, 'promocion': promocion}
+    context = {'form': form, 'promocion': promocion, 'proveedor': proveedor}
     return render(request, 'proveedores/promociones/editar.html', context)
 
 
-@login_required
+@proveedor_login_required
 @require_POST
 def eliminar_promocion(request, promocion_id):
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Eliminar promoción"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        return redirect('proveedores:login_proveedor')
 
-    promocion = get_object_or_404(
-        Promocion,
-        id=promocion_id,
-        proveedor=proveedor
-    )
+    promocion = get_object_or_404(Promocion, id=promocion_id, proveedor=proveedor)
 
-    titulo_promocion = promocion.titulo
     try:
+        titulo = promocion.titulo
         promocion.delete()
-        messages.success(request, f'✅ Promoción "{titulo_promocion}" eliminada permanentemente.')
+        messages.success(request, f'Promoción "{titulo}" eliminada exitosamente.')
     except Exception as e:
-        messages.error(request, f'Error al eliminar promoción: {e}')
+        messages.error(request, f'Error al eliminar: {e}')
 
     return redirect('proveedores:lista_promociones')
 
 
 # ==================== SOLICITUDES DE CONTACTO ====================
 
-@login_required
+@proveedor_login_required
 def enviar_solicitud_contacto(request, comercio_id=None):
-    """
-    Enviar solicitud de contacto a un comercio.
-    comercio_id es opcional en caso de que aún no tengas el modelo Comercio.
-    """
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Enviar solicitud de contacto a un comercio"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
     if request.method == 'POST':
         form = SolicitudContactoForm(request.POST)
@@ -612,146 +577,160 @@ def enviar_solicitud_contacto(request, comercio_id=None):
             try:
                 solicitud = form.save(commit=False)
                 solicitud.proveedor = proveedor
-                # si tienes comercio, asignarlo aquí: solicitud.comercio = comercio
                 solicitud.save()
-                proveedor.contactos_enviados = getattr(proveedor, 'contactos_enviados', 0) + 1
+                
+                proveedor.contactos_enviados += 1
                 proveedor.save(update_fields=['contactos_enviados'])
-                messages.success(request, 'Solicitud de contacto enviada exitosamente.')
+                
+                messages.success(request, 'Solicitud enviada exitosamente.')
                 return redirect('proveedores:mis_solicitudes')
             except Exception as e:
                 messages.error(request, f'Error al enviar solicitud: {e}')
         else:
-            messages.error(request, "Hay errores en el formulario. Revisa los campos.")
+            messages.error(request, "Hay errores en el formulario.")
     else:
         form = SolicitudContactoForm()
 
     context = {
         'form': form,
-        'proveedor': proveedor
+        'proveedor': proveedor,
+        'comercio_id': comercio_id,
     }
     return render(request, 'proveedores/solicitudes/enviar.html', context)
 
 
-@login_required
+@proveedor_login_required
 def mis_solicitudes(request):
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+    """Lista de solicitudes del proveedor"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        messages.error(request, "Debes iniciar sesión como proveedor.")
+        return redirect('proveedores:login_proveedor')
 
     solicitudes = SolicitudContacto.objects.filter(
         proveedor=proveedor
     ).order_by('-fecha_solicitud')
 
-    estado = request.GET.get('estado')
-    if estado:
-        solicitudes = solicitudes.filter(estado=estado)
+    # Filtro por estado
+    estado_filter = request.GET.get('estado', '')
+    if estado_filter:
+        solicitudes = solicitudes.filter(estado=estado_filter)
+
+    # Paginación
+    paginator = Paginator(solicitudes, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'solicitudes': solicitudes,
-        'estado_seleccionado': estado
+        'page_obj': page_obj,
+        'proveedor': proveedor,
+        'estado_filter': estado_filter,
+        'estados': SolicitudContacto.ESTADO_CHOICES,
     }
     return render(request, 'proveedores/solicitudes/mis_solicitudes.html', context)
 
 
-# ==================== VISTAS AJAX ====================
+@proveedor_login_required
+@require_POST
+def cancelar_solicitud(request, solicitud_id):
+    """Cancelar una solicitud de contacto"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        return redirect('proveedores:login_proveedor')
 
-@require_GET
-def get_comunas_ajax(request):
-    """
-    Obtener comunas de una región (para filtros dinámicos).
-    No requiere login si lo quieres público; si lo quieres privado, añade @login_required.
-    """
-    region_id = request.GET.get('region_id')
-    if not region_id:
-        return JsonResponse({'error': 'region_id requerido'}, status=400)
+    solicitud = get_object_or_404(SolicitudContacto, id=solicitud_id, proveedor=proveedor)
 
     try:
-        comunas = Comuna.objects.filter(region_id=region_id).values('id', 'nombre')
-        return JsonResponse(list(comunas), safe=False)
+        if solicitud.estado == 'pendiente':
+            solicitud.estado = 'cancelada'
+            solicitud.save(update_fields=['estado'])
+            messages.success(request, 'Solicitud cancelada exitosamente.')
+        else:
+            messages.warning(request, 'Solo se pueden cancelar solicitudes pendientes.')
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        messages.error(request, f'Error: {e}')
+
+    return redirect('proveedores:mis_solicitudes')
 
 
-@login_required
+# ==================== AJAX ====================
+
+@proveedor_login_required
 @require_POST
 def toggle_destacado_producto(request, producto_id):
-    """
-    Activar/desactivar producto destacado (POST únicamente).
-    Devuelve JSON con resultado.
-    """
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        return JsonResponse({'success': False, 'error': err}, status=403)
+    """Activar/desactivar producto destacado (AJAX)"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        return JsonResponse({'success': False, 'error': 'No autenticado'}, status=403)
 
-    producto = get_object_or_404(
-        ProductoServicio,
-        id=producto_id,
-        proveedor=proveedor
-    )
+    producto = get_object_or_404(ProductoServicio, id=producto_id, proveedor=proveedor)
 
     try:
-        producto.destacado = not bool(producto.destacado)
+        producto.destacado = not producto.destacado
         producto.save(update_fields=['destacado'])
         return JsonResponse({
             'success': True,
-            'destacado': producto.destacado
+            'destacado': producto.destacado,
+            'message': 'Producto destacado' if producto.destacado else 'Destacado removido'
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
-# ==================== CONFIGURACIÓN ====================
-
-@login_required
-def configuracion_proveedor(request):
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
-
-    if request.method == 'POST':
-        form = ConfiguracionForm(request.POST, request.FILES, instance=proveedor)
-        if form.is_valid():
-            try:
-                form.save()
-                messages.success(request, '✓ Configuración guardada correctamente.')
-                return redirect('proveedores:perfil_proveedor')
-            except Exception as e:
-                messages.error(request, f'Error al guardar la configuración: {e}')
-        else:
-            messages.error(request, '❌ Error al guardar la configuración. Revisa los campos.')
-    else:
-        form = ConfiguracionForm(instance=proveedor)
-
-    context = {
-        'form': form,
-        'proveedor': proveedor,
-        'user': request.user
-    }
-    return render(request, 'proveedores/configuracion.html', context)
+def get_regiones_ajax(request):
+    """Vista AJAX para obtener regiones de un país"""
+    pais_code = request.GET.get('pais_id')
+    
+    if pais_code and pais_code in REGIONES_POR_PAIS:
+        regiones = [
+            {'id': codigo, 'nombre': nombre}
+            for codigo, nombre in REGIONES_POR_PAIS[pais_code]
+        ]
+        return JsonResponse({'regiones': regiones})
+    
+    return JsonResponse({'regiones': []})
 
 
-@login_required
+def get_comunas_ajax(request):
+    """Vista AJAX para obtener comunas de una región"""
+    region_code = request.GET.get('region_id')
+    
+    if region_code and region_code in COMUNAS_POR_REGION:
+        comunas = [
+            {'id': codigo, 'nombre': nombre}
+            for codigo, nombre in COMUNAS_POR_REGION[region_code]
+        ]
+        return JsonResponse({'comunas': comunas})
+    
+    return JsonResponse({'comunas': []})
+
+
+
+@proveedor_login_required
 @require_POST
-def eliminar_foto_perfil(request):
-    """Eliminar foto de perfil del proveedor (POST)."""
-    proveedor, err = _get_proveedor_for_user(request)
-    if err:
-        messages.error(request, err)
-        return redirect('proveedores:crear_perfil_proveedor')
+def cambiar_estado_producto(request, producto_id):
+    """Cambiar estado activo/inactivo de un producto (AJAX)"""
+    global current_logged_in_proveedor
+    proveedor = current_logged_in_proveedor
+    
+    if not proveedor:
+        return JsonResponse({'success': False, 'error': 'No autenticado'}, status=403)
+
+    producto = get_object_or_404(ProductoServicio, id=producto_id, proveedor=proveedor)
 
     try:
-        if proveedor.foto_perfil:
-            # delete() del FileField/BLOB; save=True/False depende de tu versión, usar solo delete() es más seguro
-            proveedor.foto_perfil.delete(save=False)
-            # Si quieres limpiar el campo en el modelo:
-            proveedor.foto_perfil = None
-            proveedor.save(update_fields=['foto_perfil'])
-            messages.success(request, '✓ Foto de perfil eliminada.')
-        else:
-            messages.info(request, 'No tienes foto de perfil.')
+        producto.activo = not producto.activo
+        producto.save(update_fields=['activo'])
+        return JsonResponse({
+            'success': True,
+            'activo': producto.activo,
+            'message': 'Producto activado' if producto.activo else 'Producto desactivado'
+        })
     except Exception as e:
-        messages.error(request, f'Error al eliminar la foto: {e}')
-
-    return redirect('proveedores:configuracion')
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

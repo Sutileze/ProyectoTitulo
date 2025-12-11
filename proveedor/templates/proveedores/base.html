@@ -1,0 +1,505 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Prevenir caché de imágenes -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>{% block title %}Portal de Proveedores - Club Almacén{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --accent-color: #0095ff;
+            --shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        /* ==================== HEADER ==================== */
+        .header {
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Logo */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .logo:hover {
+            color: var(--accent-color);
+        }
+
+        /* Navegación */
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-color);
+        }
+
+        /* Botones cuando NO está logueado */
+        .btn {
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0077cc;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 149, 255, 0.3);
+        }
+
+        /* Usuario Logueado - Dropdown */
+        .user-dropdown {
+            position: relative;
+        }
+
+        .user-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .user-trigger:hover {
+            background: var(--border-color);
+            border-color: var(--accent-color);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* Forzar recarga sin caché */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .dropdown-arrow {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+        }
+
+        .user-dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Menú Dropdown */
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            min-width: 240px;
+            padding: 0.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s;
+        }
+
+        .user-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .dropdown-item .icon {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 0.5rem 0;
+        }
+
+        .dropdown-logout {
+            color: #dc3545;
+        }
+
+        .dropdown-logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Mensajes Flash */
+        .messages {
+            max-width: 1400px;
+            margin: 1rem auto;
+            padding: 0 2rem;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert::before {
+            font-size: 1.5rem;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-success::before { content: "✓"; }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-error::before { content: "✗"; }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-warning::before { content: "⚠"; }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .alert-info::before { content: "ℹ"; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-wrap: wrap;
+            }
+
+            .nav-menu {
+                flex-direction: column;
+                width: 100%;
+                gap: 0.5rem;
+            }
+
+            .user-info {
+                display: none;
+            }
+
+            .dropdown-menu {
+                right: auto;
+                left: 0;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-content">
+            <!-- Logo -->
+            <a href="{% url 'proveedores:directorio_proveedores' %}" class="logo">
+                <img src="{% static 'img/logoClubAlmacen.png' %}" alt="Club Almacén" class="logo-icon">
+                <span>Portal de Proveedores</span>
+            </a>
+
+            <!-- Navegación -->
+            <nav>
+                <ul class="nav-menu">
+                    <li>
+                        <a href="{% url 'proveedores:directorio_proveedores' %}" class="nav-link">
+                            <span>📋</span> Directorio
+                        </a>
+                    </li>
+
+                    {% if current_logged_in_proveedor %}
+                        <!-- USUARIO LOGUEADO -->
+                        <li class="user-dropdown">
+                            <div class="user-trigger">
+                                <div class="user-avatar">
+                                    {% if current_logged_in_proveedor.foto %}
+                                        <img 
+                                            src="{{ current_logged_in_proveedor.foto.url }}?nocache={{ current_logged_in_proveedor.id }}-{% now 'YmdHis' %}" 
+                                            alt="{{ current_logged_in_proveedor.nombre_empresa }}"
+                                            id="avatar-img"
+                                            crossorigin="anonymous">
+                                    {% else %}
+                                        {{ current_logged_in_proveedor.nombre_empresa|slice:":1"|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="user-info">
+                                    <span class="user-name">{{ current_logged_in_proveedor.nombre_empresa }}</span>
+                                    <span class="user-role">Proveedor</span>
+                                </div>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+
+                            <!-- Menú Dropdown -->
+                            <div class="dropdown-menu">
+                                <a href="{% url 'proveedores:dashboard_proveedor' %}" class="dropdown-item">
+                                    <span class="icon">🏠</span>
+                                    <span>Mi Dashboard</span>
+                                </a>
+                                <a href="{% url 'proveedores:editar_perfil_proveedor' %}" class="dropdown-item">
+                                    <span class="icon">✏️</span>
+                                    <span>Editar Perfil</span>
+                                </a>
+                                <a href="{% url 'proveedores:detalle_proveedor' current_logged_in_proveedor.id %}" class="dropdown-item" target="_blank">
+                                    <span class="icon">👁️</span>
+                                    <span>Ver Perfil Público</span>
+                                </a>
+                                
+                                <div class="dropdown-divider"></div>
+                                
+                                <a href="{% url 'proveedores:lista_productos' %}" class="dropdown-item">
+                                    <span class="icon">📦</span>
+                                    <span>Mis Productos</span>
+                                </a>
+                                <a href="{% url 'proveedores:lista_promociones' %}" class="dropdown-item">
+                                    <span class="icon">🎉</span>
+                                    <span>Mis Promociones</span>
+                                </a>
+                                <a href="{% url 'proveedores:mis_solicitudes' %}" class="dropdown-item">
+                                    <span class="icon">📨</span>
+                                    <span>Solicitudes</span>
+                                </a>
+                                
+                                <div class="dropdown-divider"></div>
+                                
+                                <a href="{% url 'proveedores:logout_proveedor' %}" class="dropdown-item dropdown-logout">
+                                    <span class="icon">🚪</span>
+                                    <span>Cerrar Sesión</span>
+                                </a>
+                            </div>
+                        </li>
+
+                    {% else %}
+                        <!-- USUARIO NO LOGUEADO -->
+                        <li>
+                            <a href="{% url 'proveedores:login_proveedor' %}" class="btn btn-outline">
+                                Iniciar Sesión
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'proveedores:registro_proveedor' %}" class="btn btn-primary">
+                                Registrarse
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Mensajes Flash -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // Auto-cerrar mensajes después de 5 segundos
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                alert.style.transition = 'opacity 0.5s ease';
+                alert.style.opacity = '0';
+                setTimeout(function() {
+                    alert.remove();
+                }, 500);
+            });
+        }, 5000);
+
+        // Forzar recarga del avatar sin caché
+        (function() {
+            const avatarImg = document.getElementById('avatar-img');
+            if (avatarImg) {
+                // Agregar timestamp único para forzar recarga
+                const timestamp = new Date().getTime();
+                const originalSrc = avatarImg.getAttribute('src').split('?')[0];
+                avatarImg.setAttribute('src', originalSrc + '?t=' + timestamp);
+                
+                // Prevenir caché del navegador
+                avatarImg.style.imageRendering = '-webkit-optimize-contrast';
+            }
+        })();
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

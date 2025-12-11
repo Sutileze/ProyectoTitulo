@@ -1,0 +1,823 @@
+{% extends 'proveedores/base.html' %}
+{% load static %}
+
+{% block title %}Registro de Proveedores | Club Almacén{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+
+    .auth-card {
+        background: var(--bg-primary);
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        max-width: 900px;
+        width: 100%;
+        padding: 3rem 2.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    body.dark-mode .auth-card {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .auth-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+    }
+
+    .auth-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .form-section {
+        margin-bottom: 2.5rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .form-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-row-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .form-row, .form-row-3 {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-label .required {
+        color: #dc3545;
+    }
+
+    .form-label .optional {
+        color: var(--text-secondary);
+        font-weight: 400;
+        font-size: 0.85rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(0, 149, 255, 0.1);
+    }
+
+    .form-control.error {
+        border-color: #dc3545;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .help-text {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Preview de foto de perfil */
+    .photo-upload-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .photo-preview {
+        flex-shrink: 0;
+    }
+
+    .preview-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--border-color);
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: var(--text-secondary);
+    }
+
+    .photo-input-wrapper {
+        flex: 1;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-top: 1rem;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-submit:active {
+        transform: translateY(0);
+    }
+
+    .login-link {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .login-link a {
+        color: var(--accent-color);
+        text-decoration: none;
+        font-weight: 600;
+        transition: opacity 0.2s;
+    }
+
+    .login-link a:hover {
+        opacity: 0.8;
+        text-decoration: underline;
+    }
+
+    .benefits-list {
+        background: rgba(0, 149, 255, 0.05);
+        border: 1px solid rgba(0, 149, 255, 0.2);
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .benefits-list h3 {
+        font-size: 1rem;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+    }
+
+    .benefits-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .benefits-list li {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        padding: 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .benefits-list li::before {
+        content: "✓";
+        color: #28a745;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    .password-strength {
+        height: 4px;
+        background: var(--border-color);
+        border-radius: 2px;
+        margin-top: 0.5rem;
+        overflow: hidden;
+    }
+
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: all 0.3s;
+        border-radius: 2px;
+    }
+
+    .strength-weak { width: 33%; background: #dc3545; }
+    .strength-medium { width: 66%; background: #ffc107; }
+    .strength-strong { width: 100%; background: #28a745; }
+
+    @media (max-width: 640px) {
+        .auth-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+        }
+
+        .photo-upload-container {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">
+                🏢
+            </div>
+            <h1 class="auth-title">Registro de Proveedores</h1>
+            <p class="auth-subtitle">Únete a nuestra red de proveedores y conecta con comerciantes</p>
+        </div>
+
+        <div class="benefits-list">
+            <h3>🎯 Beneficios de registrarte:</h3>
+            <ul>
+                <li>Accede a miles de comerciantes locales</li>
+                <li>Publica tus productos y promociones</li>
+                <li>Gestiona solicitudes de contacto</li>
+                <li>Aumenta la visibilidad de tu negocio</li>
+            </ul>
+        </div>
+
+        <form method="POST" action="{% url 'proveedores:registro_proveedor' %}" enctype="multipart/form-data" id="registroForm">
+            {% csrf_token %}
+
+            <!-- SECCIÓN 1: INFORMACIÓN BÁSICA -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📋</span> Información Básica
+                </h2>
+
+                <div class="form-group">
+                    <label for="id_nombre_contacto" class="form-label">
+                        Nombre de Contacto <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="nombre_contacto" 
+                        id="id_nombre_contacto"
+                        class="form-control {% if form.nombre_contacto.errors %}error{% endif %}"
+                        placeholder="Juan Pérez"
+                        value="{{ form.nombre_contacto.value|default:'' }}"
+                        required
+                    >
+                    {% if form.nombre_contacto.errors %}
+                        {% for error in form.nombre_contacto.errors %}
+                            <div class="error-message">
+                                <span>⚠</span> {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_email" class="form-label">
+                            Correo Electrónico <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            id="id_email"
+                            class="form-control {% if form.email.errors %}error{% endif %}"
+                            placeholder="contacto@empresa.com"
+                            value="{{ form.email.value|default:'' }}"
+                            required
+                        >
+                        {% if form.email.errors %}
+                            {% for error in form.email.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_nombre_empresa" class="form-label">
+                            Nombre de la Empresa <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="nombre_empresa" 
+                            id="id_nombre_empresa"
+                            class="form-control {% if form.nombre_empresa.errors %}error{% endif %}"
+                            placeholder="Mi Empresa SPA"
+                            value="{{ form.nombre_empresa.value|default:'' }}"
+                            required
+                        >
+                        {% if form.nombre_empresa.errors %}
+                            {% for error in form.nombre_empresa.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_descripcion" class="form-label">
+                        Descripción del Negocio <span class="required">*</span>
+                    </label>
+                    <textarea 
+                        name="descripcion" 
+                        id="id_descripcion"
+                        class="form-control {% if form.descripcion.errors %}error{% endif %}"
+                        placeholder="Describe tu empresa y los servicios que ofreces..."
+                        rows="4"
+                        required
+                    >{{ form.descripcion.value|default:'' }}</textarea>
+                    <div class="help-text">Mínimo 20 caracteres</div>
+                    {% if form.descripcion.errors %}
+                        {% for error in form.descripcion.errors %}
+                            <div class="error-message">
+                                <span>⚠</span> {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: FOTO DE PERFIL -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📸</span> Foto de Perfil / Logo
+                </h2>
+
+                <div class="photo-upload-container">
+                    <div class="photo-preview">
+                        <div class="preview-image" id="photoPreview">
+                            👤
+                        </div>
+                    </div>
+                    <div class="photo-input-wrapper">
+                        <div class="form-group">
+                            <label for="id_foto_perfil" class="form-label">
+                                Sube tu foto o logo <span class="optional">(opcional)</span>
+                            </label>
+                            <input 
+                                type="file" 
+                                name="foto_perfil" 
+                                id="id_foto_perfil"
+                                class="form-control"
+                                accept="image/*"
+                            >
+                            <div class="help-text">JPG, PNG o WEBP. Máximo 5MB.</div>
+                            {% if form.foto_perfil.errors %}
+                                {% for error in form.foto_perfil.errors %}
+                                    <div class="error-message">
+                                        <span>⚠</span> {{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: DATOS DE CONTACTO -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📞</span> Datos de Contacto
+                </h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_whatsapp" class="form-label">
+                            WhatsApp <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            name="whatsapp" 
+                            id="id_whatsapp"
+                            class="form-control {% if form.whatsapp.errors %}error{% endif %}"
+                            placeholder="+56912345678"
+                            value="{{ form.whatsapp.value|default:'' }}"
+                            required
+                        >
+                        {% if form.whatsapp.errors %}
+                            {% for error in form.whatsapp.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_telefono" class="form-label">
+                            Teléfono <span class="optional">(opcional)</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            name="telefono" 
+                            id="id_telefono"
+                            class="form-control"
+                            placeholder="+56912345678"
+                            value="{{ form.telefono.value|default:'' }}"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_sitio_web" class="form-label">
+                        Sitio Web <span class="optional">(opcional)</span>
+                    </label>
+                    <input 
+                        type="url" 
+                        name="sitio_web" 
+                        id="id_sitio_web"
+                        class="form-control"
+                        placeholder="https://www.tuempresa.com"
+                        value="{{ form.sitio_web.value|default:'' }}"
+                    >
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: UBICACIÓN Y COBERTURA -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📍</span> Ubicación y Cobertura
+                </h2>
+
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="id_pais" class="form-label">
+                            País <span class="optional">(opcional)</span>
+                        </label>
+                        {{ form.pais }}
+                        {% if form.pais.errors %}
+                            {% for error in form.pais.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_region" class="form-label">
+                            Región <span class="optional">(opcional)</span>
+                        </label>
+                        {{ form.region }}
+                        {% if form.region.errors %}
+                            {% for error in form.region.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_comuna" class="form-label">
+                            Comuna <span class="optional">(opcional)</span>
+                        </label>
+                        {{ form.comuna }}
+                        {% if form.comuna.errors %}
+                            {% for error in form.comuna.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_direccion" class="form-label">
+                            Dirección <span class="optional">(opcional)</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="direccion" 
+                            id="id_direccion"
+                            class="form-control"
+                            placeholder="Calle Principal 123, Of. 45"
+                            value="{{ form.direccion.value|default:'' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_cobertura" class="form-label">
+                            Zona de Cobertura <span class="optional">(opcional)</span>
+                        </label>
+                        {{ form.cobertura }}
+                        {% if form.cobertura.errors %}
+                            {% for error in form.cobertura.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 5: REDES SOCIALES -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>🌐</span> Redes Sociales <span class="optional" style="font-size: 0.85rem; font-weight: 400;">(Todos opcionales)</span>
+                </h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_facebook" class="form-label">
+                            Facebook
+                        </label>
+                        <input 
+                            type="url" 
+                            name="facebook" 
+                            id="id_facebook"
+                            class="form-control"
+                            placeholder="https://facebook.com/tupagina"
+                            value="{{ form.facebook.value|default:'' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_instagram" class="form-label">
+                            Instagram
+                        </label>
+                        <input 
+                            type="text" 
+                            name="instagram" 
+                            id="id_instagram"
+                            class="form-control"
+                            placeholder="@tuempresa"
+                            value="{{ form.instagram.value|default:'' }}"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_twitter" class="form-label">
+                            Twitter / X
+                        </label>
+                        <input 
+                            type="text" 
+                            name="twitter" 
+                            id="id_twitter"
+                            class="form-control"
+                            placeholder="@tuempresa"
+                            value="{{ form.twitter.value|default:'' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_linkedin" class="form-label">
+                            LinkedIn
+                        </label>
+                        <input 
+                            type="url" 
+                            name="linkedin" 
+                            id="id_linkedin"
+                            class="form-control"
+                            placeholder="https://linkedin.com/company/tuempresa"
+                            value="{{ form.linkedin.value|default:'' }}"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 6: CONTRASEÑA -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>🔒</span> Seguridad
+                </h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_password" class="form-label">
+                            Contraseña <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="password" 
+                            name="password" 
+                            id="id_password"
+                            class="form-control {% if form.password.errors %}error{% endif %}"
+                            placeholder="Mínimo 8 caracteres"
+                            required
+                        >
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="strengthBar"></div>
+                        </div>
+                        {% if form.password.errors %}
+                            {% for error in form.password.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_confirm_password" class="form-label">
+                            Confirmar Contraseña <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="password" 
+                            name="confirm_password" 
+                            id="id_confirm_password"
+                            class="form-control {% if form.confirm_password.errors %}error{% endif %}"
+                            placeholder="Repite la contraseña"
+                            required
+                        >
+                        {% if form.confirm_password.errors %}
+                            {% for error in form.confirm_password.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                Crear Cuenta de Proveedor
+            </button>
+        </form>
+
+        <div class="login-link">
+            ¿Ya tienes cuenta? 
+            <a href="{% url 'proveedores:login_proveedor' %}">Inicia sesión aquí</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== PREVIEW DE FOTO DE PERFIL ==========
+    document.getElementById('id_foto_perfil').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('photoPreview');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // ========== VALIDACIÓN DE FUERZA DE CONTRASEÑA ==========
+    document.getElementById('id_password').addEventListener('input', function(e) {
+        const password = e.target.value;
+        const strengthBar = document.getElementById('strengthBar');
+        
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+        if (password.match(/[0-9]/)) strength++;
+        if (password.match(/[^a-zA-Z0-9]/)) strength++;
+        
+        strengthBar.className = 'password-strength-bar';
+        if (strength === 1) {
+            strengthBar.classList.add('strength-weak');
+        } else if (strength === 2 || strength === 3) {
+            strengthBar.classList.add('strength-medium');
+        } else if (strength >= 4) {
+            strengthBar.classList.add('strength-strong');
+        }
+    });
+
+    // ========== VALIDACIÓN DE COINCIDENCIA DE CONTRASEÑAS ==========
+    document.getElementById('registroForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('id_password').value;
+        const confirmPassword = document.getElementById('id_confirm_password').value;
+        
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert('Las contraseñas no coinciden');
+        }
+    });
+
+    // ========== CARGA DINÁMICA DE REGIONES Y COMUNAS ==========
+    const paisSelect = document.getElementById('id_pais');
+    const regionSelect = document.getElementById('id_region');
+    const comunaSelect = document.getElementById('id_comuna');
+
+    paisSelect.addEventListener('change', function() {
+        const paisId = this.value;
+        regionSelect.innerHTML = '<option value="">Selecciona una región</option>';
+        comunaSelect.innerHTML = '<option value="">Primero selecciona una región</option>';
+        
+        if (paisId) {
+            fetch(`/proveedores/ajax/regiones/?pais_id=${paisId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.regiones.forEach(region => {
+                        const option = document.createElement('option');
+                        option.value = region.id;
+                        option.textContent = region.nombre;
+                        regionSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    });
+
+    regionSelect.addEventListener('change', function() {
+        const regionId = this.value;
+        comunaSelect.innerHTML = '<option value="">Selecciona una comuna</option>';
+        
+        if (regionId) {
+            fetch(`/proveedores/ajax/comunas/?region_id=${regionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    data.comunas.forEach(comuna => {
+                        const option = document.createElement('option');
+                        option.value = comuna.id;
+                        option.textContent = comuna.nombre;
+                        comunaSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    });
+</script>
+{% endblock %}

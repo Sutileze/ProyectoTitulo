@@ -1,244 +1,588 @@
-{% extends 'base.html' %}
+{% extends 'proveedores/base.html' %}
+{% load static %}
 
-{% block title %}Editar Producto - Proveedor{% endblock %}
+{% block title %}Editar Producto - {{ proveedor.nombre_empresa }} | Club Almacén{% endblock %}
 
 {% block extra_css %}
 <style>
-    .form-container {
-        max-width: 800px;
-        margin: 0 auto;
-        background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    .editar-producto-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 2rem;
     }
 
-    .form-header {
+    .page-header {
         margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #f0f0f0;
     }
 
-    .form-header h1 {
-        font-size: 1.8rem;
-        margin-bottom: 0.5rem;
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-color);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .page-title {
+        font-size: 2rem;
         font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
     }
 
-    .form-header p {
-        color: #666;
+    .page-subtitle {
+        color: var(--text-secondary);
+        font-size: 1rem;
+    }
+
+    .form-card {
+        background: var(--bg-primary);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--border-color);
     }
 
     .form-group {
         margin-bottom: 1.5rem;
     }
 
-    .form-group label {
+    .form-label {
         display: block;
         font-weight: 600;
+        color: var(--text-primary);
         margin-bottom: 0.5rem;
-        color: #333;
         font-size: 0.95rem;
+    }
+
+    .form-label .required {
+        color: #dc3545;
+        margin-left: 0.25rem;
     }
 
     .form-control {
         width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 6px;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
         font-size: 0.95rem;
-        transition: border-color 0.2s;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: all 0.2s;
     }
 
     .form-control:focus {
         outline: none;
-        border-color: #0095ff;
-        box-shadow: 0 0 0 3px rgba(0,149,255,0.1);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(0, 149, 255, 0.1);
+        background: var(--bg-primary);
+    }
+
+    .form-control.error {
+        border-color: #dc3545;
     }
 
     textarea.form-control {
         resize: vertical;
-        min-height: 100px;
+        min-height: 120px;
+        font-family: inherit;
+    }
+
+    select.form-control {
+        cursor: pointer;
+    }
+
+    .help-text {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Current image display */
+    .current-image-wrapper {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+    }
+
+    .current-image-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        display: block;
     }
 
     .current-image {
         max-width: 200px;
         border-radius: 8px;
-        margin-bottom: 1rem;
-        border: 2px solid #e0e0e0;
+        border: 2px solid var(--border-color);
     }
 
-    .help-text {
-        font-size: 0.85rem;
-        color: #666;
-        margin-top: 0.3rem;
-        display: block;
+    /* Image preview */
+    .image-upload-wrapper {
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
     }
 
-    .errorlist {
-        list-style: none;
-        color: #dc3545;
-        font-size: 0.85rem;
-        margin: 0.3rem 0 0 0;
-        padding: 0;
+    .image-preview-container {
+        flex-shrink: 0;
     }
 
-    .form-check-group {
+    .image-preview {
+        width: 200px;
+        height: 200px;
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0;
+        justify-content: center;
+        overflow: hidden;
+        background: var(--bg-secondary);
+        position: relative;
     }
 
-    .form-check-input {
+    .image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .image-preview-placeholder {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 1rem;
+    }
+
+    .image-preview-placeholder .icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+
+    .image-input-wrapper {
+        flex: 1;
+    }
+
+    /* Checkboxes mejorados */
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .checkbox-item:hover {
+        border-color: var(--accent-color);
+        background: var(--bg-primary);
+    }
+
+    .checkbox-item input[type="checkbox"] {
         width: 20px;
         height: 20px;
         cursor: pointer;
+        margin-top: 2px;
+        flex-shrink: 0;
     }
 
-    .form-check-label {
-        cursor: pointer;
-        margin: 0;
+    .checkbox-label {
+        flex: 1;
     }
 
+    .checkbox-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .checkbox-description {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    /* Form actions */
     .form-actions {
         display: flex;
         gap: 1rem;
         justify-content: flex-end;
         margin-top: 2rem;
         padding-top: 2rem;
-        border-top: 2px solid #f0f0f0;
+        border-top: 2px solid var(--border-color);
     }
 
     .btn {
-        padding: 0.75rem 2rem;
-        border-radius: 6px;
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
         font-weight: 600;
         text-decoration: none;
         border: none;
         cursor: pointer;
         font-size: 0.95rem;
         transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .btn-cancel {
-        background-color: #f5f5f5;
-        color: #333;
-        border: 1px solid #ddd;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
     }
 
     .btn-cancel:hover {
-        background-color: #e8e8e8;
+        background: var(--border-color);
     }
 
     .btn-primary {
-        background-color: #0095ff;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
 
     .btn-primary:hover {
-        background-color: #0077cc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
     }
 
     @media (max-width: 768px) {
+        .editar-producto-container {
+            padding: 1rem;
+        }
+
+        .form-card {
+            padding: 1.5rem;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .image-upload-wrapper {
+            flex-direction: column;
+        }
+
+        .image-preview {
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+
         .form-actions {
             flex-direction: column;
         }
 
         .btn {
             width: 100%;
+            justify-content: center;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="form-container">
-        <div class="form-header">
-            <h1>✏️ Editar Producto/Servicio</h1>
-            <p>Actualiza la información de tu producto</p>
+<div class="editar-producto-container">
+    
+    <!-- Header -->
+    <div class="page-header">
+        <div class="breadcrumb">
+            <a href="{% url 'proveedores:dashboard_proveedor' %}">Dashboard</a>
+            <span>›</span>
+            <a href="{% url 'proveedores:lista_productos' %}">Productos</a>
+            <span>›</span>
+            <span>Editar</span>
         </div>
+        <h1 class="page-title">✏️ Editar Producto/Servicio</h1>
+        <p class="page-subtitle">Actualiza la información de "{{ producto.nombre }}"</p>
+    </div>
 
-        <form method="post" enctype="multipart/form-data">
+    <!-- Formulario -->
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data" id="productoForm">
             {% csrf_token %}
 
-            <div class="form-group">
-                {{ form.nombre.label_tag }}
-                {{ form.nombre }}
-                {% if form.nombre.help_text %}
-                    <small class="help-text">{{ form.nombre.help_text }}</small>
-                {% endif %}
-                {{ form.nombre.errors }}
+            <!-- Sección 1: Información Básica -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📝</span> Información Básica
+                </h2>
+
+                <div class="form-group">
+                    <label for="id_nombre" class="form-label">
+                        Nombre del Producto/Servicio <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="nombre" 
+                        id="id_nombre"
+                        class="form-control {% if form.nombre.errors %}error{% endif %}"
+                        placeholder="Ej: Café Premium Colombiano"
+                        value="{{ form.nombre.value|default:producto.nombre }}"
+                        required
+                    >
+                    <span class="help-text">Nombre descriptivo y claro de tu producto o servicio</span>
+                    {% if form.nombre.errors %}
+                        {% for error in form.nombre.errors %}
+                            <div class="error-message">
+                                <span>⚠</span> {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_descripcion" class="form-label">
+                        Descripción <span class="required">*</span>
+                    </label>
+                    <textarea 
+                        name="descripcion" 
+                        id="id_descripcion"
+                        class="form-control {% if form.descripcion.errors %}error{% endif %}"
+                        placeholder="Describe las características, beneficios y detalles importantes..."
+                        required
+                    >{{ form.descripcion.value|default:producto.descripcion }}</textarea>
+                    <span class="help-text">Proporciona una descripción detallada y atractiva</span>
+                    {% if form.descripcion.errors %}
+                        {% for error in form.descripcion.errors %}
+                            <div class="error-message">
+                                <span>⚠</span> {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_categoria" class="form-label">
+                            Categoría <span class="required">*</span>
+                        </label>
+                        <select 
+                            name="categoria" 
+                            id="id_categoria"
+                            class="form-control {% if form.categoria.errors %}error{% endif %}"
+                            required
+                        >
+                            <option value="">Selecciona una categoría</option>
+                            {% for value, label in form.fields.categoria.choices %}
+                                {% if value %}
+                                    <option value="{{ value }}" {% if form.categoria.value == value or producto.categoria == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        {% if form.categoria.errors %}
+                            {% for error in form.categoria.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_precio_referencia" class="form-label">
+                            Precio de Referencia
+                        </label>
+                        <input 
+                            type="number" 
+                            name="precio_referencia" 
+                            id="id_precio_referencia"
+                            class="form-control"
+                            placeholder="0"
+                            step="0.01"
+                            min="0"
+                            value="{{ form.precio_referencia.value|default:producto.precio_referencia }}"
+                        >
+                        <span class="help-text">Precio aproximado en pesos chilenos (opcional)</span>
+                        {% if form.precio_referencia.errors %}
+                            {% for error in form.precio_referencia.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                {{ form.descripcion.label_tag }}
-                {{ form.descripcion }}
-                {% if form.descripcion.help_text %}
-                    <small class="help-text">{{ form.descripcion.help_text }}</small>
-                {% endif %}
-                {{ form.descripcion.errors }}
-            </div>
+            <!-- Sección 2: Imagen -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📸</span> Imagen del Producto
+                </h2>
 
-            <div class="form-group">
-                {{ form.categoria.label_tag }}
-                {{ form.categoria }}
-                {% if form.categoria.help_text %}
-                    <small class="help-text">{{ form.categoria.help_text }}</small>
-                {% endif %}
-                {{ form.categoria.errors }}
-            </div>
-
-            <div class="form-group">
-                {{ form.precio_referencia.label_tag }}
-                {{ form.precio_referencia }}
-                {% if form.precio_referencia.help_text %}
-                    <small class="help-text">{{ form.precio_referencia.help_text }}</small>
-                {% endif %}
-                {{ form.precio_referencia.errors }}
-            </div>
-
-            <div class="form-group">
-                {{ form.imagen.label_tag }}
                 {% if producto.imagen %}
-                    <img src="{{ producto.imagen.url }}" alt="Imagen actual" class="current-image">
-                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Imagen actual - Puedes subir una nueva</p>
-                {% endif %}
-                {{ form.imagen }}
-                {% if form.imagen.help_text %}
-                    <small class="help-text">{{ form.imagen.help_text }}</small>
-                {% endif %}
-                {{ form.imagen.errors }}
-            </div>
-
-            <div class="form-group">
-                <div class="form-check-group">
-                    {{ form.destacado }}
-                    {{ form.destacado.label_tag }}
+                <div class="current-image-wrapper">
+                    <span class="current-image-label">📷 Imagen actual:</span>
+                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="current-image">
                 </div>
-                {% if form.destacado.help_text %}
-                    <small class="help-text">{{ form.destacado.help_text }}</small>
                 {% endif %}
-                {{ form.destacado.errors }}
-            </div>
 
-            <div class="form-group">
-                <div class="form-check-group">
-                    {{ form.activo }}
-                    {{ form.activo.label_tag }}
+                <div class="image-upload-wrapper">
+                    <div class="image-preview-container">
+                        <div class="image-preview" id="imagePreview">
+                            {% if producto.imagen %}
+                                <img src="{{ producto.imagen.url }}" alt="Preview">
+                            {% else %}
+                                <div class="image-preview-placeholder">
+                                    <div class="icon">📦</div>
+                                    <div>Sin imagen</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="image-input-wrapper">
+                        <div class="form-group">
+                            <label for="id_imagen" class="form-label">
+                                {% if producto.imagen %}Cambiar Imagen{% else %}Subir Imagen{% endif %}
+                            </label>
+                            <input 
+                                type="file" 
+                                name="imagen" 
+                                id="id_imagen"
+                                class="form-control"
+                                accept="image/*"
+                            >
+                            <span class="help-text">
+                                {% if producto.imagen %}
+                                    Deja en blanco para mantener la imagen actual
+                                {% else %}
+                                    JPG, PNG o WEBP. Máximo 5MB. Recomendado: 800x800px
+                                {% endif %}
+                            </span>
+                            {% if form.imagen.errors %}
+                                {% for error in form.imagen.errors %}
+                                    <div class="error-message">
+                                        <span>⚠</span> {{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-                {% if form.activo.help_text %}
-                    <small class="help-text">{{ form.activo.help_text }}</small>
-                {% endif %}
-                {{ form.activo.errors }}
             </div>
 
+            <!-- Sección 3: Configuración -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>⚙️</span> Configuración
+                </h2>
+
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input 
+                            type="checkbox" 
+                            name="destacado" 
+                            id="id_destacado"
+                            {% if form.destacado.value or producto.destacado %}checked{% endif %}
+                        >
+                        <div class="checkbox-label">
+                            <div class="checkbox-title">⭐ Producto Destacado</div>
+                            <div class="checkbox-description">
+                                Los productos destacados aparecen primero en tu catálogo
+                            </div>
+                        </div>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input 
+                            type="checkbox" 
+                            name="activo" 
+                            id="id_activo"
+                            {% if form.activo.value or producto.activo %}checked{% endif %}
+                        >
+                        <div class="checkbox-label">
+                            <div class="checkbox-title">✅ Producto Activo</div>
+                            <div class="checkbox-description">
+                                Solo los productos activos son visibles en tu catálogo público
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Acciones -->
             <div class="form-actions">
-                <a href="{% url 'proveedores:lista_productos' %}" class="btn btn-cancel">Cancelar</a>
-                <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+                <a href="{% url 'proveedores:lista_productos' %}" class="btn btn-cancel">
+                    <span>✖</span> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <span>💾</span> Guardar Cambios
+                </button>
             </div>
         </form>
     </div>
+
 </div>
+
+<script>
+    // Preview de nueva imagen
+    document.getElementById('id_imagen').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('imagePreview');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
 {% endblock %}

@@ -1,154 +1,317 @@
-{% extends 'base.html' %}
+{% extends 'proveedores/base.html' %}
+{% load static %}
 
-{% block title %}Editar Promoción - Proveedor{% endblock %}
+{% block title %}Editar Promoción - {{ proveedor.nombre_empresa }} | Club Almacén{% endblock %}
 
 {% block extra_css %}
 <style>
-    .form-container {
-        max-width: 800px;
-        margin: 0 auto;
-        background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    .editar-promocion-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 2rem;
     }
 
-    .form-header {
+    .page-header {
         margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #f0f0f0;
     }
 
-    .form-header h1 {
-        font-size: 1.8rem;
-        margin-bottom: 0.5rem;
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-color);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .page-title {
+        font-size: 2rem;
         font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
     }
 
-    .form-header p {
-        color: #666;
+    .page-subtitle {
+        color: var(--text-secondary);
+        font-size: 1rem;
+    }
+
+    .form-card {
+        background: var(--bg-primary);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--border-color);
     }
 
     .form-group {
         margin-bottom: 1.5rem;
     }
 
-    .form-group label {
+    .form-label {
         display: block;
         font-weight: 600;
+        color: var(--text-primary);
         margin-bottom: 0.5rem;
-        color: #333;
         font-size: 0.95rem;
+    }
+
+    .form-label .required {
+        color: #dc3545;
+        margin-left: 0.25rem;
     }
 
     .form-control {
         width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 6px;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
         font-size: 0.95rem;
-        transition: border-color 0.2s;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: all 0.2s;
     }
 
     .form-control:focus {
         outline: none;
-        border-color: #0095ff;
-        box-shadow: 0 0 0 3px rgba(0,149,255,0.1);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(0, 149, 255, 0.1);
+        background: var(--bg-primary);
+    }
+
+    .form-control.error {
+        border-color: #dc3545;
     }
 
     textarea.form-control {
         resize: vertical;
-        min-height: 100px;
+        min-height: 120px;
+        font-family: inherit;
     }
 
-    .current-image {
-        max-width: 200px;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        border: 2px solid #e0e0e0;
+    input[type="date"].form-control {
+        cursor: pointer;
     }
 
     .help-text {
+        display: block;
         font-size: 0.85rem;
-        color: #666;
-        margin-top: 0.3rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Current image display */
+    .current-image-wrapper {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+    }
+
+    .current-image-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
         display: block;
     }
 
-    .errorlist {
-        list-style: none;
-        color: #dc3545;
+    .current-image {
+        max-width: 250px;
+        border-radius: 8px;
+        border: 2px solid var(--border-color);
+    }
+
+    /* Image preview */
+    .image-upload-wrapper {
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+
+    .image-preview-container {
+        flex-shrink: 0;
+    }
+
+    .image-preview {
+        width: 250px;
+        height: 180px;
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: var(--bg-secondary);
+    }
+
+    .image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .image-preview-placeholder {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 1rem;
+    }
+
+    .image-preview-placeholder .icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+
+    .image-input-wrapper {
+        flex: 1;
+    }
+
+    /* Checkboxes */
+    .checkbox-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .checkbox-item:hover {
+        border-color: var(--accent-color);
+        background: var(--bg-primary);
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .checkbox-label {
+        flex: 1;
+    }
+
+    .checkbox-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .checkbox-description {
         font-size: 0.85rem;
-        margin: 0.3rem 0 0 0;
-        padding: 0;
+        color: var(--text-secondary);
     }
 
     .form-row {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
     }
 
-    .form-check-group {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0;
-    }
-
-    .form-check-input {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-    }
-
-    .form-check-label {
-        cursor: pointer;
-        margin: 0;
-    }
-
+    /* Form actions */
     .form-actions {
         display: flex;
         gap: 1rem;
         justify-content: flex-end;
         margin-top: 2rem;
         padding-top: 2rem;
-        border-top: 2px solid #f0f0f0;
+        border-top: 2px solid var(--border-color);
     }
 
     .btn {
-        padding: 0.75rem 2rem;
-        border-radius: 6px;
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
         font-weight: 600;
         text-decoration: none;
         border: none;
         cursor: pointer;
         font-size: 0.95rem;
         transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .btn-cancel {
-        background-color: #f5f5f5;
-        color: #333;
-        border: 1px solid #ddd;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
     }
 
     .btn-cancel:hover {
-        background-color: #e8e8e8;
+        background: var(--border-color);
     }
 
     .btn-primary {
-        background-color: #0095ff;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
 
     .btn-primary:hover {
-        background-color: #0077cc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
 
     @media (max-width: 768px) {
+        .editar-promocion-container {
+            padding: 1rem;
+        }
+
+        .form-card {
+            padding: 1.5rem;
+        }
+
         .form-row {
             grid-template-columns: 1fr;
+        }
+
+        .image-upload-wrapper {
+            flex-direction: column;
+        }
+
+        .image-preview {
+            width: 100%;
+            max-width: 250px;
+            margin: 0 auto;
         }
 
         .form-actions {
@@ -157,89 +320,246 @@
 
         .btn {
             width: 100%;
+            justify-content: center;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="form-container">
-        <div class="form-header">
-            <h1>✏️ Editar Promoción</h1>
-            <p>Actualiza la información de tu promoción</p>
+<div class="editar-promocion-container">
+    
+    <!-- Header -->
+    <div class="page-header">
+        <div class="breadcrumb">
+            <a href="{% url 'proveedores:dashboard_proveedor' %}">Dashboard</a>
+            <span>›</span>
+            <a href="{% url 'proveedores:lista_promociones' %}">Promociones</a>
+            <span>›</span>
+            <span>Editar</span>
         </div>
+        <h1 class="page-title">✏️ Editar Promoción</h1>
+        <p class="page-subtitle">Actualiza la información de "{{ promocion.titulo }}"</p>
+    </div>
 
-        <form method="post" enctype="multipart/form-data">
+    <!-- Formulario -->
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data" id="promocionForm">
             {% csrf_token %}
 
-            <div class="form-group">
-                {{ form.titulo.label_tag }}
-                {{ form.titulo }}
-                {% if form.titulo.help_text %}
-                    <small class="help-text">{{ form.titulo.help_text }}</small>
-                {% endif %}
-                {{ form.titulo.errors }}
+            <!-- Sección 1: Información Básica -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📝</span> Información de la Promoción
+                </h2>
+
+                <div class="form-group">
+                    <label for="id_titulo" class="form-label">
+                        Título de la Promoción <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="titulo" 
+                        id="id_titulo"
+                        class="form-control {% if form.titulo.errors %}error{% endif %}"
+                        placeholder="Ej: ¡50% de descuento en productos seleccionados!"
+                        value="{{ form.titulo.value|default:promocion.titulo }}"
+                        required
+                    >
+                    {% if form.titulo.errors %}
+                        {% for error in form.titulo.errors %}
+                            <div class="error-message">
+                                <span>⚠</span> {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_descripcion" class="form-label">
+                        Descripción <span class="required">*</span>
+                    </label>
+                    <textarea 
+                        name="descripcion" 
+                        id="id_descripcion"
+                        class="form-control {% if form.descripcion.errors %}error{% endif %}"
+                        placeholder="Describe los detalles de tu promoción..."
+                        required
+                    >{{ form.descripcion.value|default:promocion.descripcion }}</textarea>
+                    {% if form.descripcion.errors %}
+                        {% for error in form.descripcion.errors %}
+                            <div class="error-message">
+                                <span>⚠</span> {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
             </div>
 
-            <div class="form-group">
-                {{ form.descripcion.label_tag }}
-                {{ form.descripcion }}
-                {% if form.descripcion.help_text %}
-                    <small class="help-text">{{ form.descripcion.help_text }}</small>
-                {% endif %}
-                {{ form.descripcion.errors }}
-            </div>
+            <!-- Sección 2: Imagen -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📸</span> Imagen de la Promoción
+                </h2>
 
-            <div class="form-group">
-                {{ form.imagen.label_tag }}
                 {% if promocion.imagen %}
-                    <img src="{{ promocion.imagen.url }}" alt="Imagen actual" class="current-image">
-                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Imagen actual - Puedes subir una nueva</p>
+                <div class="current-image-wrapper">
+                    <span class="current-image-label">📷 Imagen actual:</span>
+                    <img src="{{ promocion.imagen.url }}" alt="{{ promocion.titulo }}" class="current-image">
+                </div>
                 {% endif %}
-                {{ form.imagen }}
-                {% if form.imagen.help_text %}
-                    <small class="help-text">{{ form.imagen.help_text }}</small>
-                {% endif %}
-                {{ form.imagen.errors }}
+
+                <div class="image-upload-wrapper">
+                    <div class="image-preview-container">
+                        <div class="image-preview" id="imagePreview">
+                            {% if promocion.imagen %}
+                                <img src="{{ promocion.imagen.url }}" alt="Preview">
+                            {% else %}
+                                <div class="image-preview-placeholder">
+                                    <div class="icon">🎉</div>
+                                    <div>Sin imagen</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="image-input-wrapper">
+                        <div class="form-group">
+                            <label for="id_imagen" class="form-label">
+                                {% if promocion.imagen %}Cambiar Imagen{% else %}Subir Imagen{% endif %}
+                            </label>
+                            <input 
+                                type="file" 
+                                name="imagen" 
+                                id="id_imagen"
+                                class="form-control"
+                                accept="image/*"
+                            >
+                            <span class="help-text">
+                                {% if promocion.imagen %}
+                                    Deja en blanco para mantener la imagen actual
+                                {% else %}
+                                    JPG, PNG o WEBP. Máximo 5MB. Recomendado: 1200x630px
+                                {% endif %}
+                            </span>
+                            {% if form.imagen.errors %}
+                                {% for error in form.imagen.errors %}
+                                    <div class="error-message">
+                                        <span>⚠</span> {{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    {{ form.fecha_inicio.label_tag }}
-                    {{ form.fecha_inicio }}
-                    {% if form.fecha_inicio.help_text %}
-                        <small class="help-text">{{ form.fecha_inicio.help_text }}</small>
-                    {% endif %}
-                    {{ form.fecha_inicio.errors }}
-                </div>
+            <!-- Sección 3: Vigencia -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📅</span> Período de Vigencia
+                </h2>
 
-                <div class="form-group">
-                    {{ form.fecha_fin.label_tag }}
-                    {{ form.fecha_fin }}
-                    {% if form.fecha_fin.help_text %}
-                        <small class="help-text">{{ form.fecha_fin.help_text }}</small>
-                    {% endif %}
-                    {{ form.fecha_fin.errors }}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_fecha_inicio" class="form-label">
+                            Fecha de Inicio <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="date" 
+                            name="fecha_inicio" 
+                            id="id_fecha_inicio"
+                            class="form-control {% if form.fecha_inicio.errors %}error{% endif %}"
+                            value="{{ form.fecha_inicio.value|date:'Y-m-d'|default:promocion.fecha_inicio|date:'Y-m-d' }}"
+                            required
+                        >
+                        {% if form.fecha_inicio.errors %}
+                            {% for error in form.fecha_inicio.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_fecha_fin" class="form-label">
+                            Fecha de Fin <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="date" 
+                            name="fecha_fin" 
+                            id="id_fecha_fin"
+                            class="form-control {% if form.fecha_fin.errors %}error{% endif %}"
+                            value="{{ form.fecha_fin.value|date:'Y-m-d'|default:promocion.fecha_fin|date:'Y-m-d' }}"
+                            required
+                        >
+                        {% if form.fecha_fin.errors %}
+                            {% for error in form.fecha_fin.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <div class="form-check-group">
-                    {{ form.activo }}
-                    {{ form.activo.label_tag }}
-                </div>
-                {% if form.activo.help_text %}
-                    <small class="help-text">{{ form.activo.help_text }}</small>
-                {% endif %}
-                {{ form.activo.errors }}
+            <!-- Sección 4: Estado -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>⚙️</span> Estado
+                </h2>
+
+                <label class="checkbox-item">
+                    <input 
+                        type="checkbox" 
+                        name="activo" 
+                        id="id_activo"
+                        {% if form.activo.value or promocion.activo %}checked{% endif %}
+                    >
+                    <div class="checkbox-label">
+                        <div class="checkbox-title">✅ Promoción Activa</div>
+                        <div class="checkbox-description">
+                            Solo las promociones activas y dentro del período de vigencia serán visibles públicamente
+                        </div>
+                    </div>
+                </label>
             </div>
 
+            <!-- Acciones -->
             <div class="form-actions">
-                <a href="{% url 'proveedores:lista_promociones' %}" class="btn btn-cancel">Cancelar</a>
-                <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+                <a href="{% url 'proveedores:lista_promociones' %}" class="btn btn-cancel">
+                    <span>✖</span> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <span>💾</span> Guardar Cambios
+                </button>
             </div>
         </form>
     </div>
+
 </div>
+
+<script>
+    // Preview de nueva imagen
+    document.getElementById('id_imagen').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('imagePreview');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Validar que fecha fin sea mayor a fecha inicio
+    document.getElementById('id_fecha_inicio').addEventListener('change', function() {
+        const fechaInicio = this.value;
+        document.getElementById('id_fecha_fin').setAttribute('min', fechaInicio);
+    });
+</script>
 {% endblock %}

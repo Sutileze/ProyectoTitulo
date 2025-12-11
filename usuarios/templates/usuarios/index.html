@@ -65,7 +65,7 @@
 
                 <!-- Auth Buttons -->
                 <div class="flex items-center gap-3">
-                    <a href="{% url 'login' %}" class="hidden sm:block px-5 py-2.5 text-primary border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-200 font-semibold">
+                    <a href="{% url 'registro' %}" class="hidden sm:block px-5 py-2.5 text-primary border-2 border-primary rounded-lg hover:bg-primary hover:text-white transition-all duration-200 font-semibold">
                         Iniciar Sesión
                     </a>
                     <a href="{% url 'registro' %}" class="px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-all duration-200 font-semibold shadow-md">
@@ -100,7 +100,7 @@
                             <span class="material-symbols-outlined">store</span>
                             Unirme como Comerciante
                         </a>
-                        <a href="#" class="px-8 py-4 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-all duration-200 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                        <a href="{% url 'proveedores:registro_proveedor' %}" class="px-8 py-4 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-all duration-200 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2">
                             <span class="material-symbols-outlined">local_shipping</span>
                             Soy Proveedor
                         </a>

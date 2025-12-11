@@ -1,47 +1,70 @@
-
 from django.db import models
-from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
-from usuarios.models import Comerciante
-
-class Pais(models.Model):
-    nombre = models.CharField(max_length=100)
-    codigo = models.CharField(max_length=3, unique=True)
-    
-    class Meta:
-        db_table = 'pais'
-        verbose_name = 'País'
-        verbose_name_plural = 'Países'
-    
-    def __str__(self):
-        return self.nombre
+from django.utils import timezone
+from django.templatetags.static import static
 
 
-class Region(models.Model):
-    nombre = models.CharField(max_length=100)
-    pais = models.ForeignKey(Pais, on_delete=models.CASCADE, related_name='regiones')
-    
-    class Meta:
-        db_table = 'region'
-        verbose_name = 'Región'
-        verbose_name_plural = 'Regiones'
-    
-    def __str__(self):
-        return self.nombre
+# ==================== CHOICES GEOGRÁFICAS SIMPLIFICADAS ====================
 
+PAISES_CHOICES = [
+    ('', 'Selecciona un país'),
+    ('CL', 'Chile'),
+]
 
-class Comuna(models.Model):
-    nombre = models.CharField(max_length=100)
-    region = models.ForeignKey(Region, on_delete=models.CASCADE, related_name='comunas')
-    
-    class Meta:
-        db_table = 'comuna'
-        verbose_name = 'Comuna'
-        verbose_name_plural = 'Comunas'
-    
-    def __str__(self):
-        return self.nombre
+REGIONES_CHOICES = [
+    ('', 'Selecciona una región'),
+    ('CL-RM', 'Región Metropolitana'),
+    ('CL-VS', 'Valparaíso'),
+    ('CL-BI', 'Biobío'),
+]
 
+COMUNAS_CHOICES = [
+    ('', 'Selecciona una comuna'),
+    # Región Metropolitana
+    ('RM-Santiago', 'Santiago'),
+    ('RM-Maipu', 'Maipú'),
+    ('RM-Puente-Alto', 'Puente Alto'),
+    
+    # Valparaíso
+    ('VS-Valparaiso', 'Valparaíso'),
+    ('VS-Vina-del-Mar', 'Viña del Mar'),
+    ('VS-Quilpue', 'Quilpué'),
+    
+    # Biobío
+    ('BI-Concepcion', 'Concepción'),
+    ('BI-Talcahuano', 'Talcahuano'),
+    ('BI-Los-Angeles', 'Los Ángeles'),
+]
+
+# Mapeo de regiones por país
+REGIONES_POR_PAIS = {
+    'CL': [
+        ('CL-RM', 'Región Metropolitana'),
+        ('CL-VS', 'Valparaíso'),
+        ('CL-BI', 'Biobío'),
+    ],
+}
+
+# Mapeo de comunas por región
+COMUNAS_POR_REGION = {
+    'CL-RM': [
+        ('RM-Santiago', 'Santiago'),
+        ('RM-Maipu', 'Maipú'),
+        ('RM-Puente-Alto', 'Puente Alto'),
+    ],
+    'CL-VS': [
+        ('VS-Valparaiso', 'Valparaíso'),
+        ('VS-Vina-del-Mar', 'Viña del Mar'),
+        ('VS-Quilpue', 'Quilpué'),
+    ],
+    'CL-BI': [
+        ('BI-Concepcion', 'Concepción'),
+        ('BI-Talcahuano', 'Talcahuano'),
+        ('BI-Los-Angeles', 'Los Ángeles'),
+    ],
+}
+
+# ==================== MODELOS ====================
 
 class CategoriaProveedor(models.Model):
     nombre = models.CharField(max_length=100)
@@ -59,8 +82,10 @@ class CategoriaProveedor(models.Model):
 
 
 class Proveedor(models.Model):
-    # Relación con usuario
-    usuario = models.OneToOneField(Comerciante, on_delete=models.CASCADE, related_name='proveedor')
+    # ✅ AUTENTICACIÓN PROPIA
+    email = models.EmailField(unique=True, verbose_name='Correo electrónico')
+    password_hash = models.CharField(max_length=128, verbose_name='Contraseña')
+    nombre_contacto = models.CharField(max_length=200, verbose_name='Nombre de contacto')
     
     # Información básica
     nombre_empresa = models.CharField(max_length=200, verbose_name='Nombre de la Empresa')
@@ -70,13 +95,13 @@ class Proveedor(models.Model):
     foto = models.ImageField(upload_to='proveedores/', blank=True, null=True, verbose_name='Logo/Foto')
     
     # Categorías (un proveedor puede ofrecer múltiples rubros)
-    categorias = models.ManyToManyField(CategoriaProveedor, related_name='proveedores', verbose_name='Rubros que oferta')
+    categorias = models.ManyToManyField(CategoriaProveedor, related_name='proveedores', blank=True, verbose_name='Rubros que oferta')
     
-    # Ubicación geográfica
-    pais = models.ForeignKey(Pais, on_delete=models.SET_NULL, null=True, blank=True)
-    region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
-    comuna = models.ForeignKey(Comuna, on_delete=models.SET_NULL, null=True, blank=True)
-    direccion = models.CharField(max_length=255, blank=True, null=True)
+    # Ubicación geográfica (ahora como CHOICES)
+    pais = models.CharField(max_length=2, choices=PAISES_CHOICES, blank=True, null=True, verbose_name='País')
+    region = models.CharField(max_length=10, blank=True, null=True, verbose_name='Región')
+    comuna = models.CharField(max_length=50, blank=True, null=True, verbose_name='Comuna')
+    direccion = models.CharField(max_length=255, blank=True, null=True, verbose_name='Dirección')
 
     foto_perfil = models.ImageField(upload_to='proveedores/fotos/', blank=True, null=True)
     modo_oscuro = models.BooleanField(default=False)
@@ -105,7 +130,6 @@ class Proveedor(models.Model):
     )
     telefono = models.CharField(validators=[telefono_regex], max_length=17, blank=True, null=True)
     whatsapp = models.CharField(validators=[telefono_regex], max_length=17, verbose_name='WhatsApp')
-    email = models.EmailField(verbose_name='Correo electrónico')
     sitio_web = models.URLField(blank=True, null=True, verbose_name='Sitio web')
     
     # Redes sociales
@@ -127,6 +151,7 @@ class Proveedor(models.Model):
     # Metadatos
     fecha_registro = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
+    ultima_conexion = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         db_table = 'proveedor'
@@ -136,6 +161,32 @@ class Proveedor(models.Model):
     
     def __str__(self):
         return self.nombre_empresa
+    
+    def get_profile_picture_url(self):
+        if self.foto_perfil and self.foto_perfil.name:
+            return self.foto_perfil.url
+        return static('img/default_profile.png')
+    
+    def get_pais_display_name(self):
+        """Retorna el nombre completo del país"""
+        for codigo, nombre in PAISES_CHOICES:
+            if codigo == self.pais:
+                return nombre
+        return self.pais
+    
+    def get_region_display_name(self):
+        """Retorna el nombre completo de la región"""
+        for codigo, nombre in REGIONES_CHOICES:
+            if codigo == self.region:
+                return nombre
+        return self.region
+    
+    def get_comuna_display_name(self):
+        """Retorna el nombre completo de la comuna"""
+        for codigo, nombre in COMUNAS_CHOICES:
+            if codigo == self.comuna:
+                return nombre
+        return self.comuna
     
     def incrementar_visitas(self):
         self.visitas += 1
@@ -151,12 +202,8 @@ class Proveedor(models.Model):
 class SolicitudContacto(models.Model):
     """
     Modelo para gestionar las solicitudes de contacto de proveedores a comercios
-    Según el documento: Los proveedores pueden enviar mensajes o solicitudes de contacto
     """
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE, related_name='solicitudes_enviadas')
-    # Aquí deberías tener un modelo Comercio similar
-    # comercio = models.ForeignKey('Comercio', on_delete=models.CASCADE, related_name='solicitudes_recibidas')
-    
     mensaje = models.TextField(verbose_name='Mensaje de presentación')
     
     ESTADO_CHOICES = [
@@ -181,27 +228,21 @@ class SolicitudContacto(models.Model):
     
     def aceptar(self):
         self.estado = 'aceptada'
-        from django.utils import timezone
         self.fecha_respuesta = timezone.now()
         self.save()
         
-        # Actualizar contador del proveedor
         self.proveedor.contactos_aceptados += 1
         self.proveedor.save(update_fields=['contactos_aceptados'])
     
     def rechazar(self):
         self.estado = 'rechazada'
-        from django.utils import timezone
         self.fecha_respuesta = timezone.now()
         self.save()
 
+
 class ProductoServicio(models.Model):
-    """
-    Productos o servicios que ofrece el proveedor
-    """
+    """Productos o servicios que ofrece el proveedor"""
     
-    # Define las opciones de categoría
-    # Esto es mejor que crear una tabla de Categorías separada si las opciones son fijas y limitadas.
     CATEGORIA_CHOICES = (
         ('ALIMENTOS', 'Alimentos y Comida'),
         ('BEBIDAS', 'Bebidas y Licores'),
@@ -218,8 +259,6 @@ class ProductoServicio(models.Model):
     imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
     activo = models.BooleanField(default=True)
     destacado = models.BooleanField(default=False)
-    
-    # ✅ NUEVO CAMPO 'categoria' - Usa Choices
     categoria = models.CharField(
         max_length=50,
         choices=CATEGORIA_CHOICES,
@@ -240,9 +279,7 @@ class ProductoServicio(models.Model):
 
 
 class Promocion(models.Model):
-    """
-    Promociones que publican los proveedores
-    """
+    """Promociones que publican los proveedores"""
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE, related_name='promociones')
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField()
@@ -265,6 +302,5 @@ class Promocion(models.Model):
         return self.titulo
     
     def esta_vigente(self):
-        from django.utils import timezone
         hoy = timezone.now().date()
         return self.fecha_inicio <= hoy <= self.fecha_fin and self.activo

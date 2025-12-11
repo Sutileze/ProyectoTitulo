@@ -1,8 +1,4 @@
-"""
-URLs para el módulo de Proveedores
-Incluir en el urls.py principal del proyecto con:
-    path('proveedores/', include('proveedores.urls')),
-"""
+# proveedores/urls.py
 
 from django.urls import path
 from . import views
@@ -10,76 +6,38 @@ from . import views
 app_name = 'proveedores'
 
 urlpatterns = [
+    # ==================== AUTENTICACIÓN ====================
+    path('login/', views.login_proveedor_view, name='login_proveedor'),
+    path('registro/', views.registro_proveedor_view, name='registro_proveedor'),
+    path('logout/', views.logout_proveedor_view, name='logout_proveedor'),
+    
     # ==================== VISTAS PÚBLICAS ====================
-    
-    # Directorio público de proveedores
     path('', views.directorio_proveedores, name='directorio_proveedores'),
-    
-    # Detalle público de un proveedor
     path('<int:proveedor_id>/', views.detalle_proveedor, name='detalle_proveedor'),
     
-    
     # ==================== PANEL DEL PROVEEDOR ====================
+    path('dashboard/', views.dashboard_proveedor, name='dashboard_proveedor'),
+    path('perfil/editar/', views.editar_perfil_proveedor, name='editar_perfil_proveedor'),
     
-    # Dashboard del proveedor
-    path('panel/', views.perfil_proveedor, name='perfil_proveedor'),
+    # ==================== PRODUCTOS ====================
+    path('productos/', views.lista_productos, name='lista_productos'),
+    path('productos/crear/', views.crear_producto, name='crear_producto'),
+    path('productos/<int:producto_id>/editar/', views.editar_producto, name='editar_producto'),
+    path('productos/<int:producto_id>/eliminar/', views.eliminar_producto, name='eliminar_producto'),
+    path('productos/<int:producto_id>/toggle-destacado/', views.toggle_destacado_producto, name='toggle_destacado_producto'),
     
-    # Crear perfil de proveedor (primera vez)
-    path('panel/crear/', views.crear_perfil_proveedor, name='crear_perfil_proveedor'),
+    # ==================== PROMOCIONES ====================
+    path('promociones/', views.lista_promociones, name='lista_promociones'),
+    path('promociones/crear/', views.crear_promocion, name='crear_promocion'),
+    path('promociones/<int:promocion_id>/editar/', views.editar_promocion, name='editar_promocion'),
+    path('promociones/<int:promocion_id>/eliminar/', views.eliminar_promocion, name='eliminar_promocion'),
     
-    # Editar perfil del proveedor
-    path('panel/editar/', views.editar_perfil_proveedor, name='editar_perfil_proveedor'),
+    # ==================== SOLICITUDES ====================
+    path('solicitudes/enviar/', views.enviar_solicitud_contacto, name='enviar_solicitud_contacto'),
+    path('solicitudes/', views.mis_solicitudes, name='mis_solicitudes'),
     
-    
-    # ==================== GESTIÓN DE PRODUCTOS/SERVICIOS ====================
-    
-    # Lista de productos del proveedor
-    path('panel/productos/', views.lista_productos, name='lista_productos'),
-    
-    # Crear nuevo producto/servicio
-    path('panel/productos/crear/', views.crear_producto, name='crear_producto'),
-    
-    # Editar producto/servicio
-    path('panel/productos/<int:producto_id>/editar/', views.editar_producto, name='editar_producto'),
-    
-    # Eliminar producto/servicio
-    path('panel/productos/<int:producto_id>/eliminar/', views.eliminar_producto, name='eliminar_producto'),
-    
-    # Toggle destacado de producto (AJAX)
-    path('panel/productos/<int:producto_id>/toggle-destacado/', views.toggle_destacado_producto, name='toggle_destacado_producto'),
-    
-    
-    # ==================== GESTIÓN DE PROMOCIONES ====================
-    
-    # Lista de promociones del proveedor
-    path('panel/promociones/', views.lista_promociones, name='lista_promociones'),
-    
-    # Crear nueva promoción
-    path('panel/promociones/crear/', views.crear_promocion, name='crear_promocion'),
-    
-    # Editar promoción
-    path('panel/promociones/<int:promocion_id>/editar/', views.editar_promocion, name='editar_promocion'),
-    
-    # Eliminar promoción
-    path('panel/promociones/<int:promocion_id>/eliminar/', views.eliminar_promocion, name='eliminar_promocion'),
-    
-    
-    # ==================== SOLICITUDES DE CONTACTO ====================
-    
-    # Enviar solicitud de contacto a un comercio
-    path('panel/solicitudes/enviar/<int:comercio_id>/', views.enviar_solicitud_contacto, name='enviar_solicitud_contacto'),
-    
-    # Lista de solicitudes enviadas por el proveedor
-    path('panel/solicitudes/', views.mis_solicitudes, name='mis_solicitudes'),
-    
-    
-    # ==================== AJAX/API ====================
-    
-    # Obtener comunas de una región (para filtros dinámicos)
+    # ==================== AJAX ====================
     path('ajax/comunas/', views.get_comunas_ajax, name='get_comunas_ajax'),
-
-    # ==================== CONFIGURACION ====================
-    path('configuracion/', views.configuracion_proveedor, name='configuracion'),
-    path('confguracion/eliminar_foto/', views.eliminar_foto_perfil, name='eliminar_foto_perfil'),
-
+    path('ajax/regiones/', views.get_regiones_ajax, name='ajax_regiones'),
+    
 ]

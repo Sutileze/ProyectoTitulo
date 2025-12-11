@@ -1,77 +1,139 @@
-{% extends 'base.html' %}
+{% extends 'proveedores/base.html' %}
+{% load static %}
 
-{% block title %}Eliminar Promoción - Proveedor{% endblock %}
+{% block title %}Eliminar Promoción - {{ proveedor.nombre_empresa }} | Club Almacén{% endblock %}
 
 {% block extra_css %}
 <style>
-    .confirm-container {
-        max-width: 600px;
+    .eliminar-promocion-container {
+        max-width: 700px;
         margin: 3rem auto;
-        background: white;
-        padding: 2rem;
+        padding: 0 2rem;
+    }
+
+    .confirm-card {
+        background: var(--bg-primary);
         border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 2.5rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
         text-align: center;
     }
 
     .confirm-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
+        font-size: 5rem;
+        margin-bottom: 1.5rem;
+        animation: pulse 2s infinite;
     }
 
-    .confirm-container h1 {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .confirm-title {
+        font-size: 1.8rem;
+        font-weight: 700;
         color: #dc3545;
+        margin-bottom: 1rem;
     }
 
-    .promocion-info {
-        background: #f8f9fa;
+    .confirm-subtitle {
+        color: var(--text-secondary);
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .promocion-preview {
+        background: var(--bg-secondary);
+        border-radius: 12px;
         padding: 1.5rem;
-        border-radius: 8px;
-        margin: 1.5rem 0;
+        margin: 2rem 0;
         text-align: left;
+        border: 2px solid var(--border-color);
     }
 
-    .promocion-info h3 {
-        font-size: 1.2rem;
-        margin-bottom: 0.5rem;
-        color: #1a1a1a;
-    }
-
-    .promocion-info p {
-        color: #666;
-        margin-bottom: 0.5rem;
-    }
-
-    .promocion-fechas {
+    .preview-header {
         display: flex;
+        align-items: center;
         gap: 1rem;
-        margin-top: 1rem;
-        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
     }
 
-    .fecha-item {
-        flex: 1;
-        background: white;
-        padding: 0.5rem;
-        border-radius: 6px;
-        border: 1px solid #e0e0e0;
+    .preview-icon {
+        font-size: 2.5rem;
+        flex-shrink: 0;
     }
 
-    .fecha-label {
-        color: #999;
-        font-size: 0.8rem;
-        display: block;
+    .preview-info h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
         margin-bottom: 0.25rem;
     }
 
-    .fecha-value {
-        color: #333;
-        font-weight: 600;
+    .preview-info p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
-    .confirm-actions {
+    .preview-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .detail-item {
+        background: var(--bg-primary);
+        padding: 0.75rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+
+    .detail-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .detail-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1.5rem 0;
+        display: flex;
+        gap: 0.75rem;
+        text-align: left;
+    }
+
+    .warning-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .warning-text {
+        color: #856404;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .form-actions {
         display: flex;
         gap: 1rem;
         justify-content: center;
@@ -79,93 +141,121 @@
     }
 
     .btn {
-        padding: 0.75rem 2rem;
-        border-radius: 6px;
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
         font-weight: 600;
         text-decoration: none;
         border: none;
         cursor: pointer;
         font-size: 0.95rem;
         transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .btn-cancel {
-        background-color: #f5f5f5;
-        color: #333;
-        border: 1px solid #ddd;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
     }
 
     .btn-cancel:hover {
-        background-color: #e8e8e8;
-        transform: translateY(-2px);
+        background: var(--border-color);
     }
 
     .btn-danger {
-        background-color: #dc3545;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
         color: white;
     }
 
     .btn-danger:hover {
-        background-color: #c82333;
         transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
     }
 
     @media (max-width: 768px) {
-        .confirm-actions {
+        .eliminar-promocion-container {
+            padding: 1rem;
+        }
+
+        .confirm-card {
+            padding: 1.5rem;
+        }
+
+        .preview-details {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
             flex-direction: column;
         }
 
         .btn {
             width: 100%;
-        }
-
-        .promocion-fechas {
-            flex-direction: column;
+            justify-content: center;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="confirm-container">
+<div class="eliminar-promocion-container">
+    
+    <div class="confirm-card">
         <div class="confirm-icon">⚠️</div>
-        <h1>¿Eliminar esta promoción?</h1>
-        <p style="color: #666;">Esta acción desactivará la promoción. No podrás recuperarla fácilmente.</p>
+        <h1 class="confirm-title">¿Eliminar esta promoción?</h1>
+        <p class="confirm-subtitle">Esta acción no se puede deshacer fácilmente</p>
 
-        <div class="promocion-info">
-            <h3>🎁 {{ promocion.titulo }}</h3>
-            <p>{{ promocion.descripcion|truncatewords:30 }}</p>
-            
-            <div class="promocion-fechas">
-                <div class="fecha-item">
-                    <span class="fecha-label">Inicio</span>
-                    <span class="fecha-value">{{ promocion.fecha_inicio|date:"d/m/Y" }}</span>
-                </div>
-                <div class="fecha-item">
-                    <span class="fecha-label">Fin</span>
-                    <span class="fecha-value">{{ promocion.fecha_fin|date:"d/m/Y" }}</span>
+        <div class="promocion-preview">
+            <div class="preview-header">
+                <div class="preview-icon">🎉</div>
+                <div class="preview-info">
+                    <h3>{{ promocion.titulo }}</h3>
+                    <p>{{ promocion.descripcion }}</p>
                 </div>
             </div>
 
-            {% if promocion.descuento %}
-            <p style="margin-top: 1rem;">
-                <strong>💰 Descuento:</strong> {{ promocion.descuento }}%
-            </p>
-            {% endif %}
+            <div class="preview-details">
+                <div class="detail-item">
+                    <span class="detail-label">📅 Fecha de Inicio</span>
+                    <span class="detail-value">{{ promocion.fecha_inicio|date:"d/m/Y" }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">📅 Fecha de Fin</span>
+                    <span class="detail-value">{{ promocion.fecha_fin|date:"d/m/Y" }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">⚙️ Estado</span>
+                    <span class="detail-value">{% if promocion.activo %}Activa{% else %}Inactiva{% endif %}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">📅 Creada el</span>
+                    <span class="detail-value">{{ promocion.fecha_creacion|date:"d/m/Y" }}</span>
+                </div>
+            </div>
         </div>
 
-        <form method="post">
+        <div class="warning-box">
+            <div class="warning-icon">💡</div>
+            <div class="warning-text">
+                <strong>Nota:</strong> Al eliminar esta promoción, ya no será visible para los clientes. 
+                Si solo deseas pausarla temporalmente, considera desactivarla en lugar de eliminarla.
+            </div>
+        </div>
+
+        <form method="POST">
             {% csrf_token %}
-            <div class="confirm-actions">
+            <div class="form-actions">
                 <a href="{% url 'proveedores:lista_promociones' %}" class="btn btn-cancel">
-                    ← Cancelar
+                    <span>✖</span> Cancelar
                 </a>
                 <button type="submit" class="btn btn-danger">
-                    🗑️ Sí, eliminar promoción
+                    <span>🗑️</span> Sí, eliminar promoción
                 </button>
             </div>
         </form>
     </div>
+
 </div>
 {% endblock %}

@@ -1,147 +1,344 @@
-{% extends 'base.html' %}
+{% extends 'proveedores/base.html' %}
+{% load static %}
 
-{% block title %}Nueva Promoción - Proveedor{% endblock %}
+{% block title %}Crear Promoción - {{ proveedor.nombre_empresa }} | Club Almacén{% endblock %}
 
 {% block extra_css %}
 <style>
-    .form-container {
-        max-width: 800px;
-        margin: 0 auto;
-        background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    .crear-promocion-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 2rem;
     }
 
-    .form-header {
+    .page-header {
         margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #f0f0f0;
     }
 
-    .form-header h1 {
-        font-size: 1.8rem;
-        margin-bottom: 0.5rem;
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-color);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .page-title {
+        font-size: 2rem;
         font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
     }
 
-    .form-header p {
-        color: #666;
+    .page-subtitle {
+        color: var(--text-secondary);
+        font-size: 1rem;
+    }
+
+    .form-card {
+        background: var(--bg-primary);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--border-color);
     }
 
     .form-group {
         margin-bottom: 1.5rem;
     }
 
-    .form-group label {
+    .form-label {
         display: block;
         font-weight: 600;
+        color: var(--text-primary);
         margin-bottom: 0.5rem;
-        color: #333;
         font-size: 0.95rem;
+    }
+
+    .form-label .required {
+        color: #dc3545;
+        margin-left: 0.25rem;
     }
 
     .form-control {
         width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 6px;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
         font-size: 0.95rem;
-        transition: border-color 0.2s;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: all 0.2s;
     }
 
     .form-control:focus {
         outline: none;
-        border-color: #0095ff;
-        box-shadow: 0 0 0 3px rgba(0,149,255,0.1);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(0, 149, 255, 0.1);
+        background: var(--bg-primary);
+    }
+
+    .form-control.error {
+        border-color: #dc3545;
     }
 
     textarea.form-control {
         resize: vertical;
-        min-height: 100px;
+        min-height: 120px;
+        font-family: inherit;
+    }
+
+    input[type="date"].form-control {
+        cursor: pointer;
     }
 
     .help-text {
-        font-size: 0.85rem;
-        color: #666;
-        margin-top: 0.3rem;
         display: block;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
     }
 
-    .errorlist {
-        list-style: none;
+    .error-message {
         color: #dc3545;
         font-size: 0.85rem;
-        margin: 0.3rem 0 0 0;
-        padding: 0;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
-
-    .form-check-group {
+        margin-top: 0.5rem;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0;
+        gap: 0.25rem;
     }
 
-    .form-check-input {
+    /* Preview de imagen */
+    .image-upload-wrapper {
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+
+    .image-preview-container {
+        flex-shrink: 0;
+    }
+
+    .image-preview {
+        width: 250px;
+        height: 180px;
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: var(--bg-secondary);
+        position: relative;
+    }
+
+    .image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .image-preview-placeholder {
+        text-align: center;
+        color: var(--text-secondary);
+        padding: 1rem;
+    }
+
+    .image-preview-placeholder .icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+
+    .image-input-wrapper {
+        flex: 1;
+    }
+
+    /* Date inputs mejorados */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .date-input-group {
+        position: relative;
+    }
+
+    .date-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: var(--text-secondary);
+        font-size: 1.2rem;
+    }
+
+    /* Checkboxes mejorados */
+    .checkbox-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .checkbox-item:hover {
+        border-color: var(--accent-color);
+        background: var(--bg-primary);
+    }
+
+    .checkbox-item input[type="checkbox"] {
         width: 20px;
         height: 20px;
         cursor: pointer;
+        margin-top: 2px;
+        flex-shrink: 0;
     }
 
-    .form-check-label {
-        cursor: pointer;
-        margin: 0;
+    .checkbox-label {
+        flex: 1;
     }
 
+    .checkbox-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .checkbox-description {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    /* Info box */
+    .info-box {
+        background: rgba(0, 149, 255, 0.05);
+        border: 1px solid rgba(0, 149, 255, 0.2);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .info-box-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .info-box-content {
+        flex: 1;
+    }
+
+    .info-box-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .info-box-text {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    /* Form actions */
     .form-actions {
         display: flex;
         gap: 1rem;
         justify-content: flex-end;
         margin-top: 2rem;
         padding-top: 2rem;
-        border-top: 2px solid #f0f0f0;
+        border-top: 2px solid var(--border-color);
     }
 
     .btn {
-        padding: 0.75rem 2rem;
-        border-radius: 6px;
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
         font-weight: 600;
         text-decoration: none;
         border: none;
         cursor: pointer;
         font-size: 0.95rem;
         transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .btn-cancel {
-        background-color: #f5f5f5;
-        color: #333;
-        border: 1px solid #ddd;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
     }
 
     .btn-cancel:hover {
-        background-color: #e8e8e8;
+        background: var(--border-color);
     }
 
     .btn-primary {
-        background-color: #0095ff;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
 
     .btn-primary:hover {
-        background-color: #0077cc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
 
     @media (max-width: 768px) {
+        .crear-promocion-container {
+            padding: 1rem;
+        }
+
+        .form-card {
+            padding: 1.5rem;
+        }
+
         .form-row {
             grid-template-columns: 1fr;
+        }
+
+        .image-upload-wrapper {
+            flex-direction: column;
+        }
+
+        .image-preview {
+            width: 100%;
+            max-width: 250px;
+            margin: 0 auto;
         }
 
         .form-actions {
@@ -150,85 +347,307 @@
 
         .btn {
             width: 100%;
+            justify-content: center;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="form-container">
-        <div class="form-header">
-            <h1>✨ Crear Nueva Promoción</h1>
-            <p>Completa la información de la promoción que deseas ofrecer</p>
+<div class="crear-promocion-container">
+    
+    <!-- Header -->
+    <div class="page-header">
+        <div class="breadcrumb">
+            <a href="{% url 'proveedores:dashboard_proveedor' %}">Dashboard</a>
+            <span>›</span>
+            <a href="{% url 'proveedores:lista_promociones' %}">Promociones</a>
+            <span>›</span>
+            <span>Crear Nueva</span>
         </div>
+        <h1 class="page-title">🎉 Crear Nueva Promoción</h1>
+        <p class="page-subtitle">Completa la información de la promoción que deseas ofrecer</p>
+    </div>
 
-        <form method="post" enctype="multipart/form-data">
+    <!-- Info Box -->
+    <div class="info-box">
+        <div class="info-box-icon">💡</div>
+        <div class="info-box-content">
+            <div class="info-box-title">Consejos para promociones efectivas</div>
+            <div class="info-box-text">
+                Las promociones con imágenes atractivas y descripciones claras reciben más atención. 
+                Define fechas precisas y mantén tus ofertas actualizadas.
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data" id="promocionForm">
             {% csrf_token %}
 
-            <div class="form-group">
-                {{ form.titulo.label_tag }}
-                {{ form.titulo }}
-                {% if form.titulo.help_text %}
-                    <small class="help-text">{{ form.titulo.help_text }}</small>
-                {% endif %}
-                {{ form.titulo.errors }}
-            </div>
+            <!-- Sección 1: Información Básica -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📝</span> Información de la Promoción
+                </h2>
 
-            <div class="form-group">
-                {{ form.descripcion.label_tag }}
-                {{ form.descripcion }}
-                {% if form.descripcion.help_text %}
-                    <small class="help-text">{{ form.descripcion.help_text }}</small>
-                {% endif %}
-                {{ form.descripcion.errors }}
-            </div>
-
-            <div class="form-group">
-                {{ form.imagen.label_tag }}
-                {{ form.imagen }}
-                {% if form.imagen.help_text %}
-                    <small class="help-text">{{ form.imagen.help_text }}</small>
-                {% endif %}
-                {{ form.imagen.errors }}
-            </div>
-
-            <div class="form-row">
                 <div class="form-group">
-                    {{ form.fecha_inicio.label_tag }}
-                    {{ form.fecha_inicio }}
-                    {% if form.fecha_inicio.help_text %}
-                        <small class="help-text">{{ form.fecha_inicio.help_text }}</small>
+                    <label for="id_titulo" class="form-label">
+                        Título de la Promoción <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="titulo" 
+                        id="id_titulo"
+                        class="form-control {% if form.titulo.errors %}error{% endif %}"
+                        placeholder="Ej: ¡50% de descuento en productos seleccionados!"
+                        value="{{ form.titulo.value|default:'' }}"
+                        required
+                    >
+                    <span class="help-text">Un título llamativo que capte la atención</span>
+                    {% if form.titulo.errors %}
+                        {% for error in form.titulo.errors %}
+                            <div class="error-message">
+                                <span>⚠</span> {{ error }}
+                            </div>
+                        {% endfor %}
                     {% endif %}
-                    {{ form.fecha_inicio.errors }}
                 </div>
 
                 <div class="form-group">
-                    {{ form.fecha_fin.label_tag }}
-                    {{ form.fecha_fin }}
-                    {% if form.fecha_fin.help_text %}
-                        <small class="help-text">{{ form.fecha_fin.help_text }}</small>
+                    <label for="id_descripcion" class="form-label">
+                        Descripción <span class="required">*</span>
+                    </label>
+                    <textarea 
+                        name="descripcion" 
+                        id="id_descripcion"
+                        class="form-control {% if form.descripcion.errors %}error{% endif %}"
+                        placeholder="Describe los detalles de tu promoción: qué incluye, condiciones, beneficios..."
+                        required
+                    >{{ form.descripcion.value|default:'' }}</textarea>
+                    <span class="help-text">Proporciona detalles claros sobre la oferta</span>
+                    {% if form.descripcion.errors %}
+                        {% for error in form.descripcion.errors %}
+                            <div class="error-message">
+                                <span>⚠</span> {{ error }}
+                            </div>
+                        {% endfor %}
                     {% endif %}
-                    {{ form.fecha_fin.errors }}
                 </div>
             </div>
 
-            <div class="form-group">
-                <div class="form-check-group">
-                    {{ form.activo }}
-                    {{ form.activo.label_tag }}
+            <!-- Sección 2: Imagen -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📸</span> Imagen de la Promoción
+                </h2>
+
+                <div class="image-upload-wrapper">
+                    <div class="image-preview-container">
+                        <div class="image-preview" id="imagePreview">
+                            <div class="image-preview-placeholder">
+                                <div class="icon">🎉</div>
+                                <div>Sin imagen</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="image-input-wrapper">
+                        <div class="form-group">
+                            <label for="id_imagen" class="form-label">
+                                Subir Imagen
+                            </label>
+                            <input 
+                                type="file" 
+                                name="imagen" 
+                                id="id_imagen"
+                                class="form-control"
+                                accept="image/*"
+                            >
+                            <span class="help-text">JPG, PNG o WEBP. Máximo 5MB. Recomendado: 1200x630px (formato landscape)</span>
+                            {% if form.imagen.errors %}
+                                {% for error in form.imagen.errors %}
+                                    <div class="error-message">
+                                        <span>⚠</span> {{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-                {% if form.activo.help_text %}
-                    <small class="help-text">{{ form.activo.help_text }}</small>
-                {% endif %}
-                {{ form.activo.errors }}
             </div>
 
+            <!-- Sección 3: Vigencia -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>📅</span> Período de Vigencia
+                </h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_fecha_inicio" class="form-label">
+                            Fecha de Inicio <span class="required">*</span>
+                        </label>
+                        <div class="date-input-group">
+                            <input 
+                                type="date" 
+                                name="fecha_inicio" 
+                                id="id_fecha_inicio"
+                                class="form-control {% if form.fecha_inicio.errors %}error{% endif %}"
+                                value="{{ form.fecha_inicio.value|date:'Y-m-d'|default:'' }}"
+                                required
+                            >
+                            <span class="date-icon">📅</span>
+                        </div>
+                        <span class="help-text">Cuándo comienza la promoción</span>
+                        {% if form.fecha_inicio.errors %}
+                            {% for error in form.fecha_inicio.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_fecha_fin" class="form-label">
+                            Fecha de Fin <span class="required">*</span>
+                        </label>
+                        <div class="date-input-group">
+                            <input 
+                                type="date" 
+                                name="fecha_fin" 
+                                id="id_fecha_fin"
+                                class="form-control {% if form.fecha_fin.errors %}error{% endif %}"
+                                value="{{ form.fecha_fin.value|date:'Y-m-d'|default:'' }}"
+                                required
+                            >
+                            <span class="date-icon">📅</span>
+                        </div>
+                        <span class="help-text">Cuándo termina la promoción</span>
+                        {% if form.fecha_fin.errors %}
+                            {% for error in form.fecha_fin.errors %}
+                                <div class="error-message">
+                                    <span>⚠</span> {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="info-box" style="margin-top: 1rem; margin-bottom: 0;">
+                    <div class="info-box-icon">⏰</div>
+                    <div class="info-box-content">
+                        <div class="info-box-text">
+                            La promoción estará visible solo durante el período seleccionado. 
+                            Asegúrate de elegir fechas correctas.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 4: Estado -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span>⚙️</span> Estado
+                </h2>
+
+                <label class="checkbox-item">
+                    <input 
+                        type="checkbox" 
+                        name="activo" 
+                        id="id_activo"
+                        {% if form.activo.value or form.activo.value is None %}checked{% endif %}
+                    >
+                    <div class="checkbox-label">
+                        <div class="checkbox-title">✅ Promoción Activa</div>
+                        <div class="checkbox-description">
+                            Solo las promociones activas y dentro del período de vigencia serán visibles públicamente
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Acciones -->
             <div class="form-actions">
-                <a href="{% url 'proveedores:lista_promociones' %}" class="btn btn-cancel">Cancelar</a>
-                <button type="submit" class="btn btn-primary">💾 Crear Promoción</button>
+                <a href="{% url 'proveedores:lista_promociones' %}" class="btn btn-cancel">
+                    <span>✖</span> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <span>🎉</span> Crear Promoción
+                </button>
             </div>
         </form>
     </div>
+
 </div>
+
+<script>
+    // Preview de imagen
+    document.getElementById('id_imagen').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('imagePreview');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            }
+            reader.readAsDataURL(file);
+        } else {
+            preview.innerHTML = `
+                <div class="image-preview-placeholder">
+                    <div class="icon">🎉</div>
+                    <div>Sin imagen</div>
+                </div>
+            `;
+        }
+    });
+
+    // Establecer fecha mínima como hoy
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('id_fecha_inicio').setAttribute('min', today);
+    
+    // Validar que fecha fin sea mayor a fecha inicio
+    document.getElementById('id_fecha_inicio').addEventListener('change', function() {
+        const fechaInicio = this.value;
+        document.getElementById('id_fecha_fin').setAttribute('min', fechaInicio);
+    });
+
+    // Validación del formulario
+    document.getElementById('promocionForm').addEventListener('submit', function(e) {
+        const titulo = document.getElementById('id_titulo').value.trim();
+        const descripcion = document.getElementById('id_descripcion').value.trim();
+        const fechaInicio = document.getElementById('id_fecha_inicio').value;
+        const fechaFin = document.getElementById('id_fecha_fin').value;
+
+        if (!titulo) {
+            e.preventDefault();
+            alert('Por favor, ingresa el título de la promoción');
+            document.getElementById('id_titulo').focus();
+            return;
+        }
+
+        if (!descripcion) {
+            e.preventDefault();
+            alert('Por favor, ingresa una descripción');
+            document.getElementById('id_descripcion').focus();
+            return;
+        }
+
+        if (!fechaInicio || !fechaFin) {
+            e.preventDefault();
+            alert('Por favor, selecciona las fechas de inicio y fin');
+            return;
+        }
+
+        if (new Date(fechaFin) < new Date(fechaInicio)) {
+            e.preventDefault();
+            alert('La fecha de fin debe ser posterior a la fecha de inicio');
+            document.getElementById('id_fecha_fin').focus();
+            return;
+        }
+    });
+</script>
 {% endblock %}
