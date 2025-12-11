@@ -36,9 +36,6 @@
                     <td>{{ p.get_categoria_display }}</td>
                     <td>{{ p.fecha_publicacion|date:"d/m/Y H:i" }}</td>
                     <td class="text-end">
-                        <a href="{% url 'editar_post_admin' p.id %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil"></i>
-                        </a>
                         <a href="{% url 'eliminar_post_admin' p.id %}" class="btn btn-sm btn-outline-danger">
                             <i class="bi bi-trash"></i>
                         </a>

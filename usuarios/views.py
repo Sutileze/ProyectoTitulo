@@ -505,11 +505,7 @@ def add_comment_view(request, post_id):
                 'Error al publicar el comentario. El contenido no puede estar vacío.'
             )
 
-    return redirect('plataforma_comerciante')
-
-
-# ELIMINADO: def like_post_view(request, post_id):
-
+    return redirect('post_detail', post_id=post_id) # CAMBIO CLAVE: Redirige al detalle del post
 
 # --- Beneficios (RESTAURADA) ---
 

@@ -2,8 +2,14 @@
 
 from django import forms
 from django.contrib.auth.hashers import make_password
-from usuarios.models import Comerciante, Beneficio, Post
+from usuarios.models import Comerciante, Beneficio, Post, CATEGORIA_POST_CHOICES # Importar CATEGORIA_POST_CHOICES
 
+ADMIN_CATEGORIES_TUPLES = [
+    ('NOTICIAS_CA', 'Noticias Club Almacén'),
+    ('DESPACHOS', 'Despachos realizados'),
+    ('NUEVOS_SOCIOS', 'Nuevos socios'),
+    ('ACTIVIDADES', 'Actividades en curso'),
+]
 
 class ComercianteAdminForm(forms.ModelForm):
     raw_password = forms.CharField(
@@ -55,13 +61,21 @@ class BeneficioAdminForm(forms.ModelForm):
 
 # 🔹 FORMULARIO PARA POSTS
 class PostAdminForm(forms.ModelForm):
+    
+    # Campo de categoría con opciones limitadas solo a Admin
+    categoria = forms.ChoiceField(
+        choices=ADMIN_CATEGORIES_TUPLES,
+        label='Categoría',
+        widget=forms.Select(attrs={
+            # Puede agregar estilos aquí si es necesario
+        })
+    )
+    
     class Meta:
         model = Post
         fields = [
             'titulo',
             'contenido',
-            'categoria',
+            'categoria', # Usamos el campo localmente definido arriba
             'imagen_url',
-            'etiquetas',
-            'comerciante',   # para asignar a qué comerciante pertenece
         ]

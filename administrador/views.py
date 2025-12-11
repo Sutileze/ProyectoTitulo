@@ -1,4 +1,4 @@
-# administrador/views.py
+# administrador/views.py (CÓDIGO COMPLETO MODIFICADO)
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -160,7 +160,7 @@ def eliminar_beneficio_view(request, beneficio_id):#--------------Eliminar benef
     })
 
 
-# ========= POSTS (usuarios.Post) =========
+# ========= POSTS (usuarios.Post - CON CAMBIOS) =========
 
 def admin_posts_list(request):#--------------Lista de posts
     if not require_admin():
@@ -175,14 +175,16 @@ def admin_posts_list(request):#--------------Lista de posts
     })
 
 
-def crear_post_admin_view(request):#--------------Crear post
+def crear_post_admin_view(request):#--------------Crear post (AUTORIZADO)
     if not require_admin():
         return redirect('login')
 
     if request.method == 'POST':
         form = PostAdminForm(request.POST)
         if form.is_valid():
-            form.save()
+            post = form.save(commit=False)
+            post.comerciante = usuarios_views.current_logged_in_user # ASIGNADO AL ADMIN LOGUEADO
+            post.save()
             messages.success(request, "Post creado correctamente.")
             return redirect('admin_posts')
     else:
@@ -193,11 +195,17 @@ def crear_post_admin_view(request):#--------------Crear post
     })
 
 
-def editar_post_admin_view(request, post_id):#  ------------Editar post
+def editar_post_admin_view(request, post_id):#  ------------Editar post (RESTRINGIDO)
     if not require_admin():
         return redirect('login')
 
     post = get_object_or_404(Post, id=post_id)
+    admin_user = usuarios_views.current_logged_in_user 
+    
+    # RESTRICCIÓN: solo puede editar posts que él mismo creó
+    if post.comerciante != admin_user:
+        messages.error(request, "Solo puedes editar tus propias publicaciones.")
+        return redirect('admin_posts') 
 
     if request.method == 'POST':
         form = PostAdminForm(request.POST, instance=post)
@@ -214,7 +222,7 @@ def editar_post_admin_view(request, post_id):#  ------------Editar post
     })
 
 
-def eliminar_post_admin_view(request, post_id):#--------------Eliminar post
+def eliminar_post_admin_view(request, post_id):#--------------Eliminar post (SIN RESTRICCIÓN)
     if not require_admin():
         return redirect('login')
 
