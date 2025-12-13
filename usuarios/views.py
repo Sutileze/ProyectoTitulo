@@ -1,5 +1,5 @@
 from datetime import timedelta
-import re # NUEVA IMPORTACIÓN para el manejo de imágenes en la descripción
+import re 
 
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
@@ -34,8 +34,12 @@ from .forms import (
     InterestsForm,
     ComentarioForm,
 )
+from soporte.forms import TicketSoporteForm
 
-# --- CONFIGURACIÓN GLOBAL ---
+
+# =========================================================================
+# I. CONFIGURACIÓN Y CONSTANTES GLOBALES
+# =========================================================================
 
 ROLES = {
     'COMERCIANTE': 'Comerciante Verificado',
@@ -45,7 +49,6 @@ ROLES = {
     'INVITADO': 'Invitado',
 }
 
-# --- DEFINICIÓN DE CATEGORÍAS SEPARADAS ---
 COMMUNITY_CATEGORIES = [
     ('DUDA', 'Duda / Pregunta'),
     ('OPINION', 'Opinión / Debate'),
@@ -61,10 +64,12 @@ ADMIN_CATEGORIES = [
     ('ACTIVIDADES', 'Actividades en curso'),
 ]
 
-# --- DEFINICIÓN GLOBAL DE FUENTES RSS (RESTAURADA CON FILTROS CLAVE) ---
-# Se reestablecen los feeds de los diarios chilenos y se añade el de Google filtrado
+# --- CACHÉ Y RSS ---
+LAST_NEWS_UPDATE_KEY = 'last_news_update'
+CACHE_NEWS_KEY = 'cached_news_list'
+UPDATE_INTERVAL_SECONDS = 86400  # 24 horas
+
 RSS_FEEDS = {
-    # Fuente clave para relevancia, filtrada por palabras PYME
     'Google News: PYME y Leyes': {
         'url': 'https://news.google.com/rss/search?q=%22pymes%22+OR+%22emprendedores%22+OR+%22leyes+pyme%22+site%3Adf.cl+OR+site%3Aemol.com+OR+site%3Alatercera.com&hl=es&gl=CL&ceid=CL:es',
         'key': 'google_pyme',
@@ -91,56 +96,16 @@ RSS_FEEDS = {
     },
 }
 
-def extract_image_url(entry):
-    """
-    Intenta extraer la URL de la imagen de una entrada de feedparser,
-    revisando múltiples etiquetas y el contenido HTML del resumen/descripción.
-    """
-    
-    # 1. Buscar en media_thumbnail, media_content, o enclosures
-    for attr in ['media_thumbnail', 'media_content', 'enclosures']:
-        if hasattr(entry, attr) and getattr(entry, attr):
-            if isinstance(getattr(entry, attr), list):
-                 for media in getattr(entry, attr):
-                    if media.get('url') and 'image' in media.get('type', ''):
-                        return media['url']
-            elif isinstance(getattr(entry, attr), dict) and getattr(entry, attr).get('url'):
-                 if 'image' in getattr(entry, attr).get('type', ''):
-                     return getattr(entry, attr)['url']
-    
-    # Manejo de la lista en media_thumbnail directamente
-    if hasattr(entry, 'media_thumbnail') and isinstance(entry.media_thumbnail, list) and entry.media_thumbnail:
-        if entry.media_thumbnail[0].get('url'):
-            return entry.media_thumbnail[0]['url']
-        
-    # 2. Buscar la etiqueta <img> dentro del contenido/resumen (Solución para feeds que embeben HTML)
-    description_html = getattr(entry, 'summary', getattr(entry, 'description', ''))
-    
-    if isinstance(description_html, str):
-        # Búsqueda de cualquier URL dentro de un tag <img>
-        match = re.search(r'<img[^>]+src="([^">]+)"', description_html)
-        if match:
-            # Asegura que la URL de la imagen no sea un GIF o ícono pequeño
-            if not match.group(1).lower().endswith(('.gif', '.ico')) and 'thumb' not in match.group(1).lower():
-                return match.group(1)
-
-    return None
-
-# --- Funciones helper ---
+# =========================================================================
+# II. FUNCIONES AUXILIARES (HELPERS)
+# =========================================================================
 
 def get_current_user(request):
-    """Obtiene el usuario actual de la sesión."""
     comerciante_id = request.session.get('comerciante_id')
     if comerciante_id:
         try:
             return Comerciante.objects.get(id=comerciante_id) 
-        except Comerciante.DoesNotExist:
-            if 'comerciante_id' in request.session:
-                del request.session['comerciante_id']
-            return None
-        except Exception as e:
-            # Captura errores de DB/conexión y limpia la sesión para forzar re-login
-            print(f"Error crítico en get_current_user: {e}")
+        except (Comerciante.DoesNotExist, Exception) as e:
             if 'comerciante_id' in request.session:
                 del request.session['comerciante_id']
             return None
@@ -152,27 +117,45 @@ def is_online(last_login):
         return False
     return (timezone.now() - last_login) < timedelta(minutes=5)
 
+def extract_image_url(entry):
+    """Intenta extraer la URL de la imagen de una entrada de feedparser."""
+    
+    for attr in ['media_thumbnail', 'media_content', 'enclosures']:
+        if hasattr(entry, attr) and getattr(entry, attr):
+            data = getattr(entry, attr)
+            if isinstance(data, list):
+                 for media in data:
+                    if media.get('url') and 'image' in media.get('type', ''):
+                        return media['url']
+            elif isinstance(data, dict) and data.get('url'):
+                 if 'image' in data.get('type', ''):
+                     return data['url']
+    
+    if hasattr(entry, 'media_thumbnail') and isinstance(entry.media_thumbnail, list) and entry.media_thumbnail:
+        if entry.media_thumbnail[0].get('url'):
+            return entry.media_thumbnail[0]['url']
+        
+    description_html = getattr(entry, 'summary', getattr(entry, 'description', ''))
+    
+    if isinstance(description_html, str):
+        match = re.search(r'<img[^>]+src="([^">]+)"', description_html)
+        if match:
+            if not match.group(1).lower().endswith(('.gif', '.ico')) and 'thumb' not in match.group(1).lower():
+                return match.group(1)
+
+    return None
+
 def fetch_news(max_entries_per_source=15, include_image=False):
-    """
-    Función que obtiene noticias de todos los feeds configurados y las filtra 
-    por palabras clave si no provienen de la fuente de Google ya filtrada.
-    """
+    """Obtiene y filtra noticias de todos los feeds configurados."""
     all_news = []
 
-    # Lista de palabras clave para filtrar el contenido irrelevante 
-    # (basado en las temáticas que usted solicitó)
     KEYWORDS = [
-        # Relevancia y gestión
         'pyme', 'emprended', 'comerciante', 'negocio', 'asesoría', 'sercotec', 
         'corfo', 'fosis', 'proveedor', 'distribuidor',
-        # Economía y finanzas
         'costo', 'precio', 'inflación', 'ipc', 'consumo', 'crédito', 'caja',
-        # Leyes y normativas
         'ley', 'normativa', 'laboral', 'jornada', 'salud', 'seremi', 
         'fiscalización', 'municipal', 'patente', 'tributario', 'iva', 'impuesto',
-        # Tecnología y digitalización
         'digital', 'transbank', 'pos', 'qr', 'factura', 'boleta', 'inventario',
-        # Seguridad
         'seguridad', 'delincuencia', 'robo', 'alerta',
     ]
 
@@ -180,31 +163,25 @@ def fetch_news(max_entries_per_source=15, include_image=False):
         try:
             feed = feedparser.parse(source['url']) 
             
-            # Recolectar hasta max_entries_per_source (15)
             for entry in getattr(feed, 'entries', [])[:max_entries_per_source]: 
                 
-                # Usar el resumen si existe, si no, el contenido completo.
                 description = getattr(entry, 'summary', getattr(entry, 'content', [{'value': ''}])[0]['value'])
                 
                 title_lower = strip_tags(entry.title).lower()
                 desc_lower = strip_tags(description).lower()
                 
-                # --- LÓGICA DE FILTRADO CLAVE ---
                 is_relevant = False
                 
-                # La fuente de Google News ya está pre-filtrada por su URL, la incluimos siempre.
                 if source_title.startswith('Google News'):
                     is_relevant = True
                 else:
-                    # Aplicar filtro de palabras clave a las fuentes generales (DF, Emol, LT, etc.)
                     for keyword in KEYWORDS:
                         if keyword in title_lower or keyword in desc_lower:
                             is_relevant = True
                             break
                 
                 if not is_relevant:
-                    continue # Saltar la noticia si no pasa el filtro de relevancia.
-                # --- FIN LÓGICA DE FILTRADO ---
+                    continue 
 
                 news_item = {
                     'titulo': strip_tags(entry.title),
@@ -214,21 +191,59 @@ def fetch_news(max_entries_per_source=15, include_image=False):
                 }
                 
                 if include_image:
-                    # Incluye la URL de la imagen si se solicita
                     news_item['image_url'] = extract_image_url(entry)
                 
                 all_news.append(news_item)
                 
         except Exception as e:
-            # En caso de error, imprime (opcional) y continúa con la siguiente fuente
             print(f"Error al obtener feed de {source_title}: {e}")
             continue 
             
     return all_news
 
+
+def fetch_news_if_needed(request):
+    """Controla la actualización de noticias a una vez cada 24 horas usando la sesión."""
+    
+    last_update = request.session.get(LAST_NEWS_UPDATE_KEY)
+    current_time = timezone.now()
+
+    # Intenta convertir el timestamp de la sesión a un objeto datetime
+    if last_update:
+        try:
+            last_update_dt = timezone.datetime.fromtimestamp(last_update, tz=timezone.get_current_timezone())
+        except (TypeError, ValueError):
+            # Si el valor de la sesión es inválido, forzar actualización
+            last_update_dt = None
+    else:
+        last_update_dt = None
+
+    # Verificar si es la primera vez o si han pasado 24 horas
+    if not last_update_dt or (current_time - last_update_dt).total_seconds() > UPDATE_INTERVAL_SECONDS:
+        
+        print("--- FORZANDO ACTUALIZACIÓN COMPLETA DE FEEDS (24H CUMPLIDAS) ---")
+        all_news = fetch_news(max_entries_per_source=15, include_image=True)
+        
+        request.session[CACHE_NEWS_KEY] = all_news
+        request.session[LAST_NEWS_UPDATE_KEY] = current_time.timestamp()
+        request.session.modified = True 
+        
+        return all_news
+        
+    else:
+        # Usar la versión en caché (rápida)
+        elapsed_seconds = (current_time - last_update_dt).total_seconds()
+        remaining_seconds = UPDATE_INTERVAL_SECONDS - elapsed_seconds
+        
+        remaining_minutes = int(remaining_seconds / 60)
+        remaining_hours = int(remaining_minutes / 60)
+        
+        print(f"--- USANDO CACHÉ. Próxima actualización en: {remaining_hours}h {remaining_minutes % 60}m ---")
+        return request.session.get(CACHE_NEWS_KEY, [])
+
+
 def fetch_news_preview():
-    """Función auxiliar que obtiene el preview de noticias para la barra lateral."""
-    # Usar solo las fuentes más relevantes para el preview
+    """Función para obtener el preview de noticias para la barra lateral (sin caché de 24h)."""
     sources_to_preview = [
         'Google News: PYME y Leyes', 
         'Diario Financiero - Empresas (Filtrado)', 
@@ -237,21 +252,20 @@ def fetch_news_preview():
     
     preview_news = []
     
+    # Lógica de filtrado de keywords (redundante, pero necesaria para este helper)
+    KEYWORDS = [
+        'pyme', 'emprended', 'comerciante', 'negocio', 'ley', 'normativa', 
+        'IVA', 'fiscalización', 'patente', 'corfo', 'sercotec', 'fosis', 
+        'digital', 'seguridad', 'costo', 'precio'
+    ]
+    
     for source_title in sources_to_preview:
         if source_title in RSS_FEEDS:
             source = RSS_FEEDS[source_title]
             try:
                 feed = feedparser.parse(source['url']) 
                 
-                # Solo 2 entradas para el preview, incluyendo la imagen
                 for entry in getattr(feed, 'entries', [])[:2]: 
-                    
-                    # Se incluye la lógica de filtrado de fetch_news aquí también para el preview
-                    KEYWORDS = [
-                        'pyme', 'emprended', 'comerciante', 'negocio', 'ley', 'normativa', 
-                        'IVA', 'fiscalización', 'patente', 'corfo', 'sercotec', 'fosis', 
-                        'digital', 'seguridad', 'costo', 'precio'
-                    ]
                     
                     description = getattr(entry, 'summary', getattr(entry, 'content', [{'value': ''}])[0]['value'])
                     title_lower = strip_tags(entry.title).lower()
@@ -268,7 +282,7 @@ def fetch_news_preview():
                         'title': strip_tags(entry.title),
                         'link': entry.link,
                         'source_title': source_title,
-                        'image_url': extract_image_url(entry), # AÑADIDO EL CAMPO DE IMAGEN
+                        'image_url': extract_image_url(entry), 
                     })
             except Exception:
                 continue
@@ -276,7 +290,9 @@ def fetch_news_preview():
     return preview_news
 
 
-# --- Autenticación y cuenta ---
+# =========================================================================
+# III. VISTAS DE AUTENTICACIÓN Y PERFIL
+# =========================================================================
 
 def index(request):
     return redirect('registro')
@@ -303,8 +319,7 @@ def registro_view(request):
             except IntegrityError:
                 messages.error(
                     request,
-                    'Este correo electrónico ya está registrado. '
-                    'Por favor, inicia sesión o usa otro correo.'
+                    'Este correo electrónico ya está registrado. Por favor, inicia sesión o usa otro correo.'
                 )
             except Exception as e:
                 messages.error(request, f'Ocurrió un error inesperado al guardar: {e}')
@@ -329,7 +344,6 @@ def login_view(request):
 
                 if check_password(password, comerciante.password_hash):
                     
-                    # Usar sesión para multisesión
                     request.session['comerciante_id'] = comerciante.id 
                     
                     comerciante.ultima_conexion = timezone.now()
@@ -363,22 +377,16 @@ def login_view(request):
 
 
 def logout_view(request):
-    
     comerciante = get_current_user(request)
 
     if comerciante:
-        messages.info(
-            request,
-            f'Adiós, {comerciante.nombre_apellido}. Has cerrado sesión.'
-        )
+        messages.info(request, f'Adiós, {comerciante.nombre_apellido}. Has cerrado sesión.')
     
     if 'comerciante_id' in request.session:
-        del request.session['comerciante_id'] # Elimina el ID de la sesión
+        del request.session['comerciante_id'] 
     
     return redirect('login')
 
-
-# --- Perfil ---
 
 def perfil_view(request):
     
@@ -392,44 +400,28 @@ def perfil_view(request):
         action = request.POST.get('action')
 
         if action == 'edit_photo':
-            photo_form = ProfilePhotoForm(
-                request.POST,
-                request.FILES,
-                instance=comerciante
-            )
+            photo_form = ProfilePhotoForm(request.POST, request.FILES, instance=comerciante)
             if photo_form.is_valid():
                 photo_form.save()
                 messages.success(request, '¡Foto de perfil actualizada con éxito!')
                 return redirect('perfil')
             else:
-                messages.error(
-                    request,
-                    'Error al subir la foto. Asegúrate de que sea un archivo válido.'
-                )
+                messages.error(request, 'Error al subir la foto. Asegúrate de que sea un archivo válido.')
 
         elif action == 'edit_contact':
             contact_form = ContactInfoForm(request.POST, instance=comerciante)
             if contact_form.is_valid():
                 nuevo_email = contact_form.cleaned_data.get('email')
 
-                if (
-                    nuevo_email != comerciante.email and
-                    Comerciante.objects.filter(email=nuevo_email).exists()
-                ):
+                if (nuevo_email != comerciante.email and Comerciante.objects.filter(email=nuevo_email).exists()):
                     messages.error(request, 'Este correo ya está registrado por otro usuario.')
                 else:
                     contact_form.save()
                     messages.success(request, 'Datos de contacto actualizados con éxito.')
                     return redirect('perfil')
             else:
-                error_msgs = [
-                    f"{field.label}: {', '.join(error for error in field.errors)}"
-                    for field in contact_form if field.errors
-                ]
-                messages.error(
-                    request,
-                    f'Error en los datos de contacto. {"; ".join(error_msgs)}'
-                )
+                error_msgs = [f"{field.label}: {', '.join(error for error in field.errors)}" for field in contact_form if field.errors]
+                messages.error(request, f'Error en los datos de contacto. {"; ".join(error_msgs)}')
 
         elif action == 'edit_business':
             business_form = BusinessDataForm(request.POST, instance=comerciante)
@@ -438,14 +430,8 @@ def perfil_view(request):
                 messages.success(request, 'Datos del negocio actualizados con éxito.')
                 return redirect('perfil')
             else:
-                error_msgs = [
-                    f"{field.label}: {', '.join(error for error in field.errors)}"
-                    for field in business_form if field.errors
-                ]
-                messages.error(
-                    request,
-                    f'Error en los datos del negocio. {"; ".join(error_msgs)}'
-                )
+                error_msgs = [f"{field.label}: {', '.join(error for error in field.errors)}" for field in business_form if field.errors]
+                messages.error(request, f'Error en los datos del negocio. {"; ".join(error_msgs)}')
 
         elif action == 'edit_interests':
             interests_form = InterestsForm(request.POST)
@@ -465,12 +451,8 @@ def perfil_view(request):
     contact_form = ContactInfoForm(instance=comerciante)
     business_form = BusinessDataForm(instance=comerciante)
 
-    intereses_actuales_codigos = (
-        comerciante.intereses.split(',') if comerciante.intereses else []
-    )
-    interests_form = InterestsForm(
-        initial={'intereses': [c for c in intereses_actuales_codigos if c]}
-    )
+    intereses_actuales_codigos = (comerciante.intereses.split(',') if comerciante.intereses else [])
+    interests_form = InterestsForm(initial={'intereses': [c for c in intereses_actuales_codigos if c]})
 
     intereses_choices_dict = dict(INTERESTS_CHOICES)
 
@@ -479,12 +461,10 @@ def perfil_view(request):
         'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
         'nombre_negocio_display': comerciante.nombre_negocio,
         'es_proveedor': comerciante.es_proveedor,
-
         'photo_form': photo_form,
         'contact_form': contact_form,
         'business_form': business_form,
         'interests_form': interests_form,
-
         'intereses_actuales_codigos': [c for c in intereses_actuales_codigos if c],
         'intereses_choices_dict': intereses_choices_dict,
     }
@@ -492,75 +472,55 @@ def perfil_view(request):
     return render(request, 'usuarios/perfil.html', context)
 
 
-# --- Plataforma / Foro ---
+# =========================================================================
+# IV. VISTAS DE COMUNIDAD (FORO)
+# =========================================================================
 
 def plataforma_comerciante_view(request):
     
     comerciante = get_current_user(request)
 
     if not comerciante:
-        messages.warning(
-            request,
-            'Por favor, inicia sesión para acceder a la plataforma.'
-        )
+        messages.warning(request, 'Por favor, inicia sesión para acceder a la plataforma.')
         return redirect('login')
         
     posts_query = (
         Post.objects
         .select_related('comerciante')
-        .annotate(
-            comentarios_count=Count('comentarios', distinct=True),
-        )
-        .prefetch_related(
-            'comentarios',
-            'comentarios__comerciante'
-        )
+        .annotate(comentarios_count=Count('comentarios', distinct=True))
+        .prefetch_related('comentarios','comentarios__comerciante')
     )
 
-    # Lógica de filtrado de Administrador
     tipo_filtro = request.GET.get('tipo_filtro', 'COMUNIDAD')
     
-    # 1. Definir opciones de categorías válidas según el filtro principal
     if tipo_filtro == 'ADMIN':
         posts_query = posts_query.filter(comerciante__rol='ADMIN')
         category_options = ADMIN_CATEGORIES
-    else: # 'COMUNIDAD'
+    else: 
         community_keys = [key for key, value in COMMUNITY_CATEGORIES]
         posts_query = posts_query.filter(categoria__in=community_keys)
         category_options = COMMUNITY_CATEGORIES
 
-    # 2. Aplicar filtro de subcategoría (Temas del Foro)
     categoria_filtros = request.GET.getlist('categoria', [])
-    
-    # Obtener todas las claves válidas para el filtro actual
     valid_categories_keys = [key for key, value in category_options]
     
     if categoria_filtros and 'TODAS' not in categoria_filtros and 'TODOS' not in categoria_filtros:
-        # Si se seleccionan categorías específicas (que no sean 'TODAS')
-        posts = posts_query.filter(
-            categoria__in=categoria_filtros
-        ).order_by('-fecha_publicacion')
+        posts = posts_query.filter(categoria__in=categoria_filtros).order_by('-fecha_publicacion')
     else:
-        # Si no hay filtro o se selecciona 'TODAS'
         posts = posts_query.filter(categoria__in=valid_categories_keys).order_by('-fecha_publicacion')
         if categoria_filtros and ('TODAS' in categoria_filtros or 'TODOS' in categoria_filtros):
-            categoria_filtros = ['TODAS'] # Para mantener el filtro 'Todas' resaltado
+            categoria_filtros = ['TODAS'] 
 
-    # 3. Restricción de publicación
     user_can_post = True
     if comerciante and comerciante.rol != 'ADMIN' and tipo_filtro == 'ADMIN':
-        # Un Comerciante o Proveedor no puede publicar en el feed de ADMIN
         user_can_post = False
 
-    # NUEVO: Carga de regiones para la barra lateral
     try:
         regiones = Region.objects.all().order_by('nombre')
     except Exception:
-        regiones = [] # Retorna lista vacía si la tabla no existe o falla la importación
+        regiones = [] 
 
-    top_posters = Comerciante.objects.annotate(
-        post_count=Count('posts')
-    ).exclude(rol='ADMIN').order_by('-post_count')[:5] #
+    top_posters = Comerciante.objects.annotate(post_count=Count('posts')).exclude(rol='ADMIN').order_by('-post_count')[:5]
 
     news_preview = fetch_news_preview() 
     context = {
@@ -568,20 +528,16 @@ def plataforma_comerciante_view(request):
         'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
         'post_form': PostForm(),
         'posts': posts,
-        # Se pasa la lista completa de categorías al formulario de post y las separadas para los filtros
         'CATEGORIA_POST_CHOICES': CATEGORIA_POST_CHOICES,
         'COMMUNITY_CATEGORIES': COMMUNITY_CATEGORIES,
         'ADMIN_CATEGORIES': ADMIN_CATEGORIES,
         'categoria_seleccionada': categoria_filtros,
         'comentario_form': ComentarioForm(),
-        'message': (
-            f'Bienvenido a la plataforma, '
-            f'{comerciante.nombre_apellido.split()[0]}.'
-        ),
+        'message': f'Bienvenido a la plataforma, {comerciante.nombre_apellido.split()[0]}.',
         'tipo_filtro': tipo_filtro,
-        'regiones': regiones, # AÑADIDO al contexto
-        'user_can_post': user_can_post, # NUEVA VARIABLE DE CONTEXTO
-        'top_posters': top_posters,  # AÑADIDO: Lista de usuarios más activos
+        'regiones': regiones, 
+        'user_can_post': user_can_post, 
+        'top_posters': top_posters,  
         'news_preview': news_preview,
     }
 
@@ -599,27 +555,18 @@ def publicar_post_view(request):
         
         selected_category = request.POST.get('categoria')
 
-        # Determinar si la categoría seleccionada es de Administración o Comunidad
         admin_category_keys = [key for key, _ in ADMIN_CATEGORIES]
         community_category_keys = [key for key, _ in COMMUNITY_CATEGORIES]
         
         is_admin_category = selected_category in admin_category_keys
         is_community_category = selected_category in community_category_keys
         
-        # VALIDACIÓN 1: Restricción para Comerciantes/Proveedores publicando en Admin categorías (EXISTENTE)
         if is_admin_category and comerciante.rol != 'ADMIN':
-            messages.error(
-                request, 
-                'No tienes permiso para publicar en la categoría seleccionada.'
-            )
+            messages.error(request, 'No tienes permiso para publicar en la categoría seleccionada.')
             return redirect('plataforma_comerciante')
         
-        # VALIDACIÓN 2: Restricción para Admins publicando en Comunidad categorías (REGLA SOLICITADA)
         if comerciante.rol == 'ADMIN' and is_community_category:
-            messages.error(
-                request,
-                'Como Administrador, solo puedes publicar en categorías de Administración.'
-            )
+            messages.error(request, 'Como Administrador, solo puedes publicar en categorías de Administración.')
             return redirect('plataforma_comerciante')
         
         
@@ -633,23 +580,14 @@ def publicar_post_view(request):
                 uploaded_file = form.cleaned_data.get('uploaded_file')
 
                 if uploaded_file:
-                    file_name = default_storage.save(
-                        f'posts/{uploaded_file.name}',
-                        uploaded_file
-                    )
+                    file_name = default_storage.save(f'posts/{uploaded_file.name}', uploaded_file)
                     nuevo_post.imagen_url = default_storage.url(file_name)
 
                 nuevo_post.save()
-                messages.success(
-                    request,
-                    '¡Publicación creada con éxito! Se ha añadido al foro.'
-                )
+                messages.success(request, '¡Publicación creada con éxito! Se ha añadido al foro.')
                 return redirect('plataforma_comerciante')
             else:
-                messages.error(
-                    request,
-                    f'Error al publicar. Corrige: {form.errors.as_text()}'
-                )
+                messages.error(request, f'Error al publicar. Corrige: {form.errors.as_text()}')
                 return redirect('plataforma_comerciante')
         except Exception as e:
             messages.error(request, f'Ocurrió un error al publicar: {e}')
@@ -667,15 +605,11 @@ def post_detail_view(request, post_id):
     post = get_object_or_404(
         Post.objects
         .select_related('comerciante')
-        .annotate(
-            comentarios_count=Count('comentarios', distinct=True),
-        ),
+        .annotate(comentarios_count=Count('comentarios', distinct=True)),
         pk=post_id
     )
 
-    comentarios = post.comentarios.select_related(
-        'comerciante'
-    ).all().order_by('fecha_creacion')
+    comentarios = post.comentarios.select_related('comerciante').all().order_by('fecha_creacion')
 
     context = {
         'comerciante': comerciante,
@@ -705,30 +639,74 @@ def add_comment_view(request, post_id):
             nuevo_comentario.save()
             messages.success(request, '¡Comentario publicado con éxito!')
         else:
-            messages.error(
-                request,
-                'Error al publicar el comentario. El contenido no puede estar vacío.'
-            )
+            messages.error(request, 'Error al publicar el comentario. El contenido no puede estar vacío.')
 
     return redirect('plataforma_comerciante')
 
 
-# --- Beneficios (RESTAURADA) ---
+def redes_sociales_view(request):
+    comerciante = get_current_user(request)
+
+    if not comerciante:
+        messages.warning(request, 'Por favor, inicia sesión para acceder a esta sección.')
+        return redirect('login')
+
+    context = {
+        'comerciante': comerciante,
+        'rol_usuario': ROLES.get('COMERCIANTE', 'Usuario'),
+    }
+
+    return render(request, 'usuarios/redes_sociales.html', context)
+
+
+# =========================================================================
+# V. VISTAS DE NOTICIAS Y BENEFICIOS
+# =========================================================================
+
+def noticias_view(request):
+    
+    comerciante = get_current_user(request)
+
+    if not comerciante:
+        messages.warning(request, 'Por favor, inicia sesión para acceder a las noticias.')
+        return redirect('login')
+
+    source_seleccionada = request.GET.get('fuente', 'TODOS')
+    theme_seleccionada = request.GET.get('tematica', 'TODOS')
+
+    # Obtener todas las noticias, usando la caché si no ha pasado el tiempo
+    all_news = fetch_news_if_needed(request) 
+
+    noticias_filtradas = all_news
+    
+    if source_seleccionada != 'TODOS':
+        noticias_filtradas = [n for n in noticias_filtradas if n['source_title'] == source_seleccionada]
+
+    fuentes_disponibles = sorted(list(RSS_FEEDS.keys()))
+    tematicas_disponibles = ['Negocios', 'Leyes', 'Emprendimiento', 'Comercio'] 
+
+    context = {
+        'comerciante': comerciante,
+        'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
+        'noticias': noticias_filtradas, 
+        'fuentes': fuentes_disponibles, 
+        'source_seleccionada': source_seleccionada,
+        'tematicas': tematicas_disponibles, 
+        'theme_seleccionada': theme_seleccionada,
+    }
+    return render(request, 'usuarios/noticias.html', context)
+
 
 def beneficios_view(request):
     
     comerciante = get_current_user(request)
 
     if not comerciante:
-        messages.warning(
-            request,
-            'Por favor, inicia sesión para acceder a los beneficios.'
-        )
+        messages.warning(request, 'Por favor, inicia sesión para acceder a los beneficios.')
         return redirect('login')
 
     comerciante = comerciante
 
-    # La lista de categorías para el filtro
     CATEGORIAS_CHOICES = CATEGORIAS 
     
     category_filter = request.GET.get('category', 'TODOS')
@@ -739,12 +717,7 @@ def beneficios_view(request):
     if category_filter and category_filter != 'TODOS':
         beneficios_queryset = beneficios_queryset.filter(categoria=category_filter)
 
-    # AJUSTADO: Eliminando opciones de ordenamiento por puntos
-    valid_sort_fields = [
-        'vence',
-        '-vence',
-        '-fecha_creacion',
-    ]
+    valid_sort_fields = ['vence', '-vence', '-fecha_creacion']
     if sort_by in valid_sort_fields:
         beneficios_queryset = beneficios_queryset.order_by(sort_by)
     else:
@@ -756,7 +729,6 @@ def beneficios_view(request):
     context = {
         'comerciante': comerciante,
         'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
-
         'beneficios': beneficios_queryset,
         'no_beneficios_disponibles': no_beneficios_disponibles,
         'CATEGORIAS': CATEGORIAS_CHOICES, 
@@ -767,8 +739,9 @@ def beneficios_view(request):
     return render(request, 'usuarios/beneficios.html', context)
 
 
-# --- Gestión de rol proveedor ---
-
+# =========================================================================
+# VI. VISTAS DE DIRECTORIO Y PROVEEDORES
+# =========================================================================
 
 def proveedor_dashboard_view(request):
     
@@ -793,38 +766,24 @@ def proveedor_dashboard_view(request):
     return render(request, 'proveedores/perfil.html', context)
 
 
-# --- Directorio de proveedores ---
-
 def directorio_view(request):
     
-    comerciante = get_current_user(request) # Obtener el comerciante
+    comerciante = get_current_user(request) 
 
     rubro_filter = request.GET.get('rubro', 'TODOS')
-    # AÑADIDO: Obtener filtro de región
     region_filter_id = request.GET.get('region') 
 
     propuestas_queryset = Propuesta.objects.select_related('proveedor').all()
 
     if rubro_filter and rubro_filter != 'TODOS':
-        propuestas_queryset = propuestas_queryset.filter(
-            rubros_ofertados__icontains=rubro_filter
-        )
+        propuestas_queryset = propuestas_queryset.filter(rubros_ofertados__icontains=rubro_filter)
     
-    # NUEVO: Lógica de filtrado por Región en el Directorio
     if region_filter_id and region_filter_id != '':
         try:
-            # Asumiendo que Proveedor tiene una FK a Region.
-            propuestas_queryset = propuestas_queryset.filter(
-                proveedor__region__id=region_filter_id
-            )
+            propuestas_queryset = propuestas_queryset.filter(proveedor__region__id=region_filter_id)
         except Exception:
-            # Si el modelo Proveedor no tiene la FK a Region (por si hubo errores de migración),
-            # simplemente se omite el filtro.
             pass
 
-
-    # ELIMINADO: zona_filter (Charfield) para usar region_filter (FK)
-    # y el sort_by (se simplifica la lógica)
     sort_by = request.GET.get('ordenar_por', 'proveedor__nombre') 
     valid_sort_fields = ['proveedor__nombre', '-proveedor__nombre']
     
@@ -835,7 +794,6 @@ def directorio_view(request):
         propuestas_queryset = propuestas_queryset.order_by(sort_by)
         
 
-    # NUEVO: Carga de regiones para el contexto del directorio
     try:
         regiones = Region.objects.all().order_by('nombre')
     except Exception:
@@ -844,19 +802,12 @@ def directorio_view(request):
     context = {
         'propuestas': propuestas_queryset,
         'RUBROS_CHOICES': RUBROS_CHOICES,
-        'ZONAS': [
-            'Santiago Centro',
-            'Providencia',
-            'Ñuñoa',
-            'Las Condes',
-            'Maipú',
-            'La Reina',
-        ],
+        'ZONAS': ['Santiago Centro', 'Providencia', 'Ñuñoa', 'Las Condes', 'Maipú', 'La Reina'],
         'current_rubro': rubro_filter,
-        'current_zona': region_filter_id, # Usamos la ID de región seleccionada aquí
+        'current_zona': region_filter_id, 
         'current_sort': sort_by,
         'comerciante': comerciante,
-        'regiones': regiones, # AÑADIDO para el filtro
+        'regiones': regiones, 
         'region_seleccionada': region_filter_id,
     }
 
@@ -865,7 +816,7 @@ def directorio_view(request):
 
 def proveedor_perfil_view(request, pk):
     proveedor = get_object_or_404(Proveedor, pk=pk)
-    current_user = get_current_user(request) # Obtiene el usuario para mostrar su estado
+    current_user = get_current_user(request) 
 
     is_online_status = is_online(proveedor.ultima_conexion)
 
@@ -874,9 +825,7 @@ def proveedor_perfil_view(request, pk):
     rubros_list = propuestas.values_list('rubros_ofertados', flat=True)
     rubros_ofertados = ', '.join(rubros_list) if rubros_list else 'No especificados'
 
-    zona_geografica = (
-        propuestas.first().zona_geografica if propuestas.exists() else 'No especificada'
-    )
+    zona_geografica = (propuestas.first().zona_geografica if propuestas.exists() else 'No especificada')
 
     context = {
         'proveedor': proveedor,
@@ -890,15 +839,13 @@ def proveedor_perfil_view(request, pk):
 
     return render(request, 'usuarios/proveedor_perfil.html', context)
 
-# Se asume que el usuario tiene la línea de importación correcta
-from soporte.forms import TicketSoporteForm
-# NOTA: strip_tags y re están importados arriba
+
+# =========================================================================
+# VII. VISTAS DE SOPORTE
+# =========================================================================
 
 def crear_ticket_soporte(request):
-    """
-    Vista para que un COMERCIANTE cree un ticket de soporte.
-    Usa el sistema de sesión.
-    """
+    
     comerciante = get_current_user(request)
     if not comerciante:
         messages.error(request, "Debes iniciar sesión para crear un ticket de soporte.")
@@ -920,61 +867,3 @@ def crear_ticket_soporte(request):
         'comerciante': comerciante,
     }
     return render(request, 'usuarios/soporte/crear_ticket.html', contexto)
-
-
-def noticias_view(request):
-    
-    comerciante = get_current_user(request)
-
-    if not comerciante:
-        messages.warning(request, 'Por favor, inicia sesión para acceder a las noticias.')
-        return redirect('login')
-
-    source_seleccionada = request.GET.get('fuente', 'TODOS')
-    theme_seleccionada = request.GET.get('tematica', 'TODOS')
-
-    # 1. Obtener todas las noticias (con el nuevo límite de 15) e incluir imagen
-    # La función fetch_news ahora incluye la lógica de filtrado por palabras clave
-    all_news = fetch_news(max_entries_per_source=15, include_image=True) 
-
-    noticias_filtradas = all_news
-    
-    # Aplicar filtrado por fuente (si el usuario ha seleccionado una)
-    if source_seleccionada != 'TODOS':
-        noticias_filtradas = [
-            n for n in noticias_filtradas 
-            if n['source_title'] == source_seleccionada
-        ]
-
-    # La lista de fuentes disponibles para el filtro (se obtiene de las claves del diccionario)
-    fuentes_disponibles = sorted(list(RSS_FEEDS.keys()))
-    
-    # La lista de temáticas disponibles (placeholder para el filtro que no se implementó en Python)
-    tematicas_disponibles = ['Negocios', 'Leyes', 'Emprendimiento', 'Comercio'] 
-
-    context = {
-        'comerciante': comerciante,
-        'rol_usuario': ROLES.get(comerciante.rol, 'Usuario'),
-        'noticias': noticias_filtradas, 
-        'fuentes': fuentes_disponibles, 
-        'source_seleccionada': source_seleccionada,
-        'tematicas': tematicas_disponibles, 
-        'theme_seleccionada': theme_seleccionada,
-    }
-    return render(request, 'usuarios/noticias.html', context)
-
-
-def redes_sociales_view(request):
-    """Restaura la vista que estaba dando AttributeError en urls.py."""
-    comerciante = get_current_user(request)
-
-    if not comerciante:
-        messages.warning(request, 'Por favor, inicia sesión para acceder a esta sección.')
-        return redirect('login')
-
-    context = {
-        'comerciante': comerciante,
-        'rol_usuario': ROLES.get('COMERCIANTE', 'Usuario'),
-    }
-
-    return render(request, 'usuarios/redes_sociales.html', context)
