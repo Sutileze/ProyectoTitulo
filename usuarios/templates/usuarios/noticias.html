@@ -8,8 +8,9 @@
     <title>Noticias del Rubro</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <script id="tailwind-config">
         tailwind.config = {
@@ -22,7 +23,7 @@
                 "background-light": "#F4F6F8",
                 "background-dark": "#101c22",
                 "text-light": "#333333",
-                "text-dark": "#F4F6F8",
+                "text-dark": "#F4F8F8",
                 "text-muted-light": "#666666",
                 "text-muted-dark": "#a0aec0",
               },
@@ -34,6 +35,53 @@
           },
         }
     </script>
+    
+    <style>
+        .news-card {
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            /* Altura fija y uniforme para TODAS las tarjetas */
+            height: 450px; 
+            max-width: 900px; 
+            margin: 0 auto;
+            overflow: hidden; 
+            border: 1px solid #e2e8f0; 
+        }
+        .news-card:hover {
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        .source-header {
+            height: 80px; 
+            background-color: #e0f2fe; 
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+        }
+        .news-content {
+            flex-grow: 1; 
+            overflow: hidden;
+            padding-bottom: 0; 
+        }
+        /* **CLASE PARA LIMITAR EL RESUMEN A 7 LÍNEAS** */
+        .line-clamp-7 {
+            display: -webkit-box;
+            -webkit-line-clamp: 7;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            /* Altura fija para 7 líneas de texto (1.5rem * 7 = 10.5rem). ESTO FUERZA LA UNIFORMIDAD. */
+            height: 10.5rem; 
+        }
+        /* Clase para limitar el título a 2 líneas */
+        .line-clamp-2-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 48px; 
+        }
+    </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display">
     <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
@@ -48,90 +96,76 @@
                         <a href="{% url 'plataforma_comerciante' %}" class="hover:text-primary transition-colors">Plataforma</a>
                         <a href="{% url 'directorio' %}" class="hover:text-primary transition-colors">Proveedores</a> 
                         <a href="{% url 'beneficios' %}" class="hover:text-primary transition-colors">Beneficios</a>
-                        <a href="{% url 'perfil' %}" class="hover:text-primary transition-colors">Perfil</a>
+                        <a href="{% url 'redes_sociales' %}" class="hover:text-primary transition-colors">Redes Sociales</a>
+                        <a href="{% url 'crear_ticket_soporte' %}" class="btn btn-outline-danger hover:bg-red-500 hover:text-white transition-colors border-red-500 text-red-500 p-2 rounded-lg text-xs font-semibold"><i class="bi bi-life-preserver mr-1"></i> Solicitar soporte</a>
                     </nav>
                 </div>
                 <div class="flex justify-end gap-4 items-center">
-                    <a href="{% url 'plataforma_comerciante' %}" class="btn btn-outline-secondary">
-                        <i class="material-symbols-outlined me-1">arrow_back</i>
-                        <span class="hidden sm:inline">Volver a Plataforma</span>
+                    <button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-transparent text-text-muted-light dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <span class="material-symbols-outlined text-2xl">notifications</span>
+                    </button>
+                    <a href="{% url 'perfil' %}" class="flex items-center gap-2 p-1 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        {# URL DE IMAGEN CORREGIDA EN VIEWS.PY - SE ASUME QUE ESTÁ EN EL CONTEXTO #}
+                        <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" 
+                              style='background-image: url("{{ comerciante.get_profile_picture_url }}");'>
+                        </div>
+                        
+                        <div class="flex flex-col text-left hidden sm:block pr-2">
+                            <p class="text-text-light dark:text-text-dark text-sm font-semibold leading-none">{{ comerciante.nombre_apellido|truncatewords:2 }}</p>
+                            <p class="text-text-muted-light dark:text-text-muted-dark text-xs leading-none mt-1">{{ rol_usuario }}</p>
+                        </div>
                     </a>
                 </div>
             </header>
             
             <main class="flex-1 w-full max-w-screen-xl mx-auto p-6 lg:p-8">
                 
-                <h1 class="text-3xl font-bold text-text-light dark:text-text-dark mb-2">Noticias y Actualidad</h1>
-                <p class="text-text-muted-light dark:text-text-muted-dark text-lg mb-8">Información relevante de medios nacionales y especializados (Revista Comerciante, La Tercera, etc.).</p>
-
-                <form method="get" action="{% url 'noticias' %}" id="filter-news-form" class="flex flex-wrap gap-4 mb-6 items-center bg-white p-4 rounded-xl shadow-sm">
-                    
-                    <h3 class="text-base font-semibold text-text-light mr-2">Filtrar por:</h3>
-
-                    {# Filtro por Periodico/Fuente #}
-                    <select name="fuente" onchange="document.getElementById('filter-news-form').submit()" 
-                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-text-muted-light focus:ring-primary focus:border-primary">
-                        <option value="TODOS" {% if source_seleccionada == 'TODOS' %}selected{% endif %}>
-                            Fuente (Todos)
-                        </option>
-                        {% for source in fuentes %}
-                            <option value="{{ source }}" {% if source == source_seleccionada %}selected{% endif %}>
-                                {{ source }}
-                            </option>
-                        {% endfor %}
-                    </select>
-
-                    {# Filtro por Temática/Temas #}
-                    <select name="tematica" onchange="document.getElementById('filter-news-form').submit()" 
-                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-text-muted-light focus:ring-primary focus:border-primary">
-                        <option value="TODOS" {% if theme_seleccionada == 'TODOS' %}selected{% endif %}>
-                            Temática (Todas)
-                        </option>
-                        {% for theme in tematicas %}
-                            <option value="{{ theme }}" {% if theme == theme_seleccionada %}selected{% endif %}>
-                                {{ theme }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    
-                    <button type="submit" class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors">
-                        Aplicar Filtros
-                    </button>
-                    
-                    {% if source_seleccionada != 'TODOS' or theme_seleccionada != 'TODOS' %}
-                    <a href="{% url 'noticias' %}" class="text-sm text-red-500 hover:text-red-700 underline ml-auto">Limpiar Filtros</a>
-                    {% endif %}
-                </form>
+                <h1 class="text-4xl font-extrabold text-text-light dark:text-text-dark mb-2">📰 Noticias del Sector PYME</h1>
+                <p class="text-text-muted-light dark:text-text-muted-dark text-lg mb-10">Contenido esencial filtrado sobre leyes, finanzas, tecnología y seguridad para comerciantes y emprendedores.</p>
 
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {# Contenedor principal usa cuadrícula de 3 columnas para uniformidad #}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     
                     {% for news in noticias %}
-                    <div class="bg-white dark:bg-white rounded-xl shadow-md overflow-hidden flex flex-col group hover:shadow-xl transition-shadow duration-300">
+                    <div class="news-card bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
                         
-                        <div class="relative p-4 h-40 flex items-center justify-center overflow-hidden border-b border-gray-100">
-                            <span class="material-symbols-outlined text-6xl text-primary opacity-50 absolute inset-0 m-auto">article</span>
-                            <h4 class="text-xs font-semibold uppercase text-text-light z-10 p-2 bg-white/70 backdrop-blur-sm rounded-lg">{{ news.theme }}</h4>
+                        {# HEADER DE LA FUENTE (Logo y Nombre) #}
+                        <div class="source-header">
+                             <i class="material-symbols-outlined text-4xl mr-3 text-secondary">feed</i>
+                             <h4 class="text-xl font-extrabold text-primary dark:text-text-dark leading-none">
+                                {{ news.source_title }}
+                            </h4>
                         </div>
                         
-                        <div class="p-4 flex-1 flex flex-col">
-                            <h3 class="text-lg font-bold text-text-light dark:text-text-dark mb-2">{{ news.title }}</h3>
-                            <p class="text-text-muted-light text-sm mb-4 flex-grow">{{ news.snippet|truncatechars:150 }}</p>
+                        <div class="p-5 news-content">
                             
-                            <div class="flex items-center justify-between mt-auto border-t pt-3">
-                                <span class="text-xs font-semibold text-primary/80">Fuente: {{ news.source }}</span>
-                                <a href="{{ news.url }}" target="_blank"
-                                   class="px-3 py-1 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors">
-                                    Leer Noticia
+                            {# TÍTULO (Limitado a 2 líneas) #}
+                            <h3 class="text-xl font-bold text-text-light dark:text-text-dark mb-3 leading-snug hover:text-primary transition-colors line-clamp-2-title">
+                                <a href="{{ news.link }}" target="_blank">{{ news.titulo }}</a>
+                            </h3>
+                            
+                            {# CONTENIDO / RESUMEN EXTENDIDO (Limitado a 7 líneas) #}
+                            <p class="text-text-muted-light text-base mb-4 line-clamp-7">
+                                {{ news.resumen|truncatechars:700 }}
+                            </p>
+                            
+                            <div class="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end">
+                                
+                                {# BOTÓN DE ACCIÓN #}
+                                <a href="{{ news.link }}" target="_blank"
+                                    class="px-5 py-2.5 bg-primary text-white text-base font-bold rounded-lg hover:bg-primary/90 transition-colors flex items-center shadow-md">
+                                    Leer Noticia Completa
+                                    <i class="material-symbols-outlined text-base ml-2">arrow_forward</i>
                                 </a>
                             </div>
                         </div>
                     </div>
                     {% empty %}
-                        <div class="col-span-full bg-white dark:bg-white p-10 rounded-xl shadow-sm text-center">
-                            <span class="material-symbols-outlined text-6xl text-text-muted-light mb-4">info</span>
-                            <p class="text-lg font-semibold text-text-muted-light">No se encontraron noticias que coincidan con los filtros seleccionados.</p>
-                            <p class="text-sm text-text-muted-light mt-2">Intenta con otra combinación de fuente y temática.</p>
+                        <div class="col-span-full bg-white dark:bg-gray-800 p-12 rounded-xl shadow-lg text-center">
+                            <span class="material-symbols-outlined text-7xl text-red-500 mb-4">gpp_maybe</span>
+                            <p class="text-xl font-semibold text-text-light dark:text-text-dark">No se encontraron noticias relevantes en este momento.</p>
+                            <p class="text-base text-text-muted-light dark:text-text-muted-dark mt-2">Asegúrate de que tu conexión a Internet permita el acceso a los feeds de los diarios chilenos (Diario Financiero, La Tercera, etc.).</p>
                         </div>
                     {% endfor %}
 
